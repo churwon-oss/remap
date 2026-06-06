@@ -1,6 +1,5 @@
 fastapi
-uvicorn
-openpyxl
-qrcode
 uvicorn[standard]
 websockets
+openpyxl
+qrcode
