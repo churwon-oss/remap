@@ -3599,6 +3599,41 @@ button.soft{
   box-shadow:none!important;
 }
 
+
+/* ===== v3.22 teacher mobile header/button layout patch =====
+   - Smartphone portrait: keep status badge from overlapping REMAP title.
+   - Smartphone teacher operation buttons: use a compact horizontal strip, so the
+     ceremony button can appear without reshuffling the whole panel vertically.
+*/
+@media (max-width: 820px) and (orientation: portrait){
+  .topbar{height:60px!important;padding:0 10px!important;gap:8px!important;overflow:hidden!important;}
+  .topbar .brand{font-size:17px!important;flex:0 0 76px!important;min-width:76px!important;position:relative;z-index:2;}
+  .topbar .roomTitle{left:44%!important;width:24vw!important;max-width:190px!important;font-size:clamp(23px,5.6vw,34px)!important;letter-spacing:.3px!important;z-index:1;}
+  .topbar .statusBadge{position:relative!important;z-index:3;flex:0 1 34vw!important;max-width:34vw!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;justify-content:center!important;font-size:clamp(10px,2.35vw,12px)!important;padding:7px 9px!important;gap:4px!important;}
+  .topbar .statusBadge::before{flex:0 0 7px!important;width:7px!important;height:7px!important;}
+}
+@media (max-width: 480px) and (orientation: portrait){
+  .topbar .brand{font-size:16px!important;flex-basis:70px!important;min-width:70px!important;}
+  .topbar .roomTitle{left:43%!important;width:22vw!important;font-size:23px!important;}
+  .topbar .statusBadge{flex-basis:37vw!important;max-width:37vw!important;font-size:10px!important;padding:6px 7px!important;}
+}
+@media (max-width: 820px), (max-height: 720px) and (orientation: landscape){
+  .summaryPanel .opButtons{display:flex!important;grid-template-columns:none!important;gap:8px!important;overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch!important;padding:2px 2px 8px!important;margin-top:12px!important;scroll-snap-type:x proximity!important;}
+  .summaryPanel .opButtons.hasCeremony{grid-template-columns:none!important;}
+  .summaryPanel .opButtons button{flex:0 0 128px!important;min-width:128px!important;min-height:56px!important;padding:8px 10px!important;font-size:15px!important;line-height:1.18!important;white-space:normal!important;word-break:keep-all!important;scroll-snap-align:start!important;}
+  .summaryPanel .opButtons #exportQuestionsBtn{flex-basis:154px!important;min-width:154px!important;}
+  .summaryPanel .opButtons #ceremonyBtn{order:3!important;}
+  .summaryPanel .opButtons #resetBtn{order:4!important;}
+  .summaryPanel .opButtons #exportQuestionsBtn{order:5!important;}
+  .summaryPanel .opButtons #newRoomBtn{order:6!important;}
+  .summaryPanel .opButtons::-webkit-scrollbar{height:5px;}
+  .summaryPanel .opButtons::-webkit-scrollbar-thumb{background:rgba(91,141,204,.35);border-radius:999px;}
+}
+@media (max-height: 720px) and (orientation: landscape){
+  .summaryPanel .opButtons button{flex-basis:142px!important;min-width:142px!important;}
+  .summaryPanel .opButtons #exportQuestionsBtn{flex-basis:170px!important;min-width:170px!important;}
+}
+
 </style>
 </head>
 <body>
