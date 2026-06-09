@@ -2059,11 +2059,14 @@ button.soft{
 }
 
 @media (orientation:landscape) and (pointer:coarse){
-  /* Top bar + game fit for Galaxy landscape. */
-  .topbar{height:48px!important;padding:0 8px!important;}
-  .brand{font-size:17px!important;}
-  .roomTitle{font-size:clamp(20px,4.2vw,30px)!important;width:48vw!important;max-width:48vw!important;}
-  .statusBadge{max-width:27vw!important;font-size:10px!important;padding:5px 8px!important;}
+  /* Top bar + game fit for phone landscape.
+     Keep the centered REMAP title clear by pinning status right next to the leave button. */
+  .topbar{height:48px!important;padding:0 8px!important;justify-content:flex-start!important;position:relative!important;}
+  .brand{font-size:17px!important;flex:0 0 auto!important;margin-right:auto!important;}
+  .roomTitle{font-size:clamp(20px,4.2vw,30px)!important;width:30vw!important;max-width:30vw!important;z-index:1!important;}
+  .statusBadge{max-width:24vw!important;font-size:9px!important;padding:5px 7px!important;}
+  body.show-top-leave .topLeaveBtn{display:inline-flex!important;position:absolute!important;right:8px!important;top:50%!important;transform:translateY(-50%)!important;height:30px!important;padding:0 10px!important;font-size:11px!important;z-index:7!important;}
+  body.show-top-leave .statusBadge{display:inline-flex!important;position:absolute!important;right:76px!important;top:50%!important;transform:translateY(-50%)!important;max-width:26vw!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;z-index:7!important;}
   #gameScreen{height:calc(100dvh - 48px)!important;min-height:calc(100dvh - 48px)!important;padding:5px!important;}
   #gameScreen .studentMapPanel{padding:7px!important;}
   #gameScreen .mapHeader{min-height:28px!important;margin-bottom:5px!important;}
