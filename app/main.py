@@ -3212,7 +3212,7 @@ button.soft{background:linear-gradient(135deg,rgba(34,211,238,.28),rgba(139,92,2
 .modeButtons{display:grid;grid-template-columns:1fr 1fr;gap:9px}.modeBtn,.mapBtn{background:rgba(255,255,255,.07);color:#dff4ff;border:1px solid var(--line);box-shadow:none;text-align:center}.modeBtn.active,.mapBtn.active{background:linear-gradient(135deg,rgba(34,211,238,.95),rgba(37,99,235,.96) 58%,rgba(124,58,237,.96));border-color:rgba(125,211,252,.65);color:#fff;box-shadow:0 16px 34px rgba(37,99,235,.24)}
 .mapButtons{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mapBtn{padding:14px 12px}.mapBtn small{display:block;margin-top:4px;font-weight:700;color:#aecaec}.mapBtn.active small{color:#eaf8ff}.helpBox{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:18px;padding:13px;color:#deefff}.teamLegend{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}.teamChip{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);font-size:12px;font-weight:900}.createActions{display:flex;gap:10px;margin-top:18px}.createActions button{flex:1;height:48px}
 #operateScreen{height:calc(100vh - 64px);display:none;grid-template-rows:auto 1fr;gap:12px;padding:12px;overflow:hidden}.opHeader{display:grid;grid-template-columns:520px minmax(0,1fr);gap:12px;align-items:stretch}.codeBox{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:172px}.codeTextBlock{min-width:0;flex:1}.codeValue{font-size:54px;letter-spacing:7px;font-weight:1000;color:#fff;line-height:1;text-shadow:0 0 22px rgba(56,189,248,.34)}.joinUrl{margin-top:10px;font-size:12px;line-height:1.35;color:#173b7a;font-weight:900;word-break:break-all;background:rgba(226,238,255,.92);border:1px solid rgba(91,141,204,.30);border-radius:12px;padding:8px 10px}.qrPanel{display:flex;flex-direction:column;align-items:center;gap:7px;flex:0 0 auto}.joinQr{display:block;width:132px;height:132px;padding:8px;border-radius:18px;background:#fff;border:1px solid rgba(15,31,58,.16);box-shadow:0 14px 30px rgba(15,31,58,.18);object-fit:contain;cursor:pointer;transition:.16s ease transform,.16s ease box-shadow}.joinQr:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 18px 36px rgba(15,31,58,.24)}.qrCaption{font-size:11px;font-weight:900;color:#173b7a;text-align:center}.qrModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(3,7,18,.72);backdrop-filter:blur(10px);z-index:1000}.qrModal.show{display:flex}.qrModalCard{width:min(560px,92vw);background:linear-gradient(180deg,#ffffff,#eaf4ff);border:1px solid rgba(148,197,255,.55);border-radius:30px;padding:22px;box-shadow:0 34px 100px rgba(0,0,0,.42);position:relative;text-align:center}.qrModalClose{position:absolute;right:14px;top:14px;width:42px;height:42px;border-radius:999px;border:1px solid rgba(15,31,58,.12);background:#ffffff;color:#10233f;font-size:28px;line-height:1;font-weight:900;box-shadow:0 10px 24px rgba(15,31,58,.12);cursor:pointer}.qrModalClose:hover{background:#eff6ff}.qrModalTitle{font-size:24px;font-weight:1000;color:#10233f;margin:4px 46px 6px}.qrModalCode{font-size:46px;letter-spacing:8px;font-weight:1000;color:#0f2d59;margin-bottom:10px}.qrModalImg{display:block;width:min(390px,72vw);height:min(390px,72vw);object-fit:contain;background:#fff;border-radius:24px;border:1px solid rgba(15,31,58,.12);padding:16px;margin:0 auto;box-shadow:0 18px 46px rgba(15,31,58,.16)}.qrModalUrl{margin:13px auto 0;max-width:460px;font-size:13px;line-height:1.4;color:#173b7a;font-weight:900;word-break:break-all;background:#f3f8ff;border:1px solid rgba(91,141,204,.24);border-radius:14px;padding:10px}.qrModalHint{margin-top:10px;color:#4b6385;font-size:13px;font-weight:800}.codeTag{padding:7px 10px;border-radius:999px;background:rgba(34,211,238,.15);border:1px solid rgba(125,211,252,.28);font-size:12px;color:#bdefff;font-weight:900}.summaryPanel{padding:10px!important;align-self:stretch;display:flex;flex-direction:column;gap:10px;min-height:172px}.headerMeta{display:grid;grid-template-columns:1.05fr .8fr .9fr 1.4fr .85fr;gap:8px;height:auto}.miniCard{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.11);border-radius:14px;padding:8px 10px;min-width:0;min-height:60px;display:flex;flex-direction:column;justify-content:center}.miniCard strong{display:block;font-size:17px;color:#fff;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.miniCard.primary strong{font-size:20px}.miniCard.compact strong{font-size:16px}.opButtons{display:grid;grid-template-columns:1fr 1fr 1fr 1.15fr 1fr;gap:8px;margin-top:auto}.opButtons.hasCeremony{grid-template-columns:1fr 1fr 1fr 1fr 1.15fr 1fr}.ceremonyBtn{display:none;background:linear-gradient(135deg,#fbbf24,#f59e0b)!important;color:#172033!important;box-shadow:0 12px 24px rgba(245,158,11,.22)!important}.ceremonyBtn.show{display:block!important}.opButtons button{min-height:44px;padding:8px 10px;font-size:15px;line-height:1.2}.opButtons #endBtn{box-shadow:0 12px 24px rgba(220,38,38,.16)}
-.opMain{display:grid;grid-template-columns:310px minmax(0,1fr) 330px;gap:12px;min-height:0}.col{min-height:0;overflow:auto;padding-right:2px}.col .panel{margin-bottom:10px}.centerCol{min-width:0;min-height:0;display:flex}.mapPanel{width:100%;min-width:0;min-height:0;display:flex;flex-direction:column;padding:15px}.mapHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}.mapTitleWrap h3{margin:0;color:#fff}.mapTitleWrap .mini{margin-top:3px}.mapWrap{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;background:linear-gradient(180deg,rgba(10,28,54,.74),rgba(8,20,38,.80));border:1px solid rgba(255,255,255,.09);border-radius:20px;padding:10px;position:relative;overflow:hidden}.mapWrap::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(56,189,248,.10),transparent 45%);pointer-events:none}canvas{position:relative;max-width:100%;max-height:100%;border:2px solid rgba(125,211,252,.38);border-radius:20px;background:#d5e4f7;box-shadow:0 26px 60px rgba(0,0,0,.32),0 0 0 8px rgba(255,255,255,.035)}
+.opMain{display:grid;grid-template-columns:310px minmax(0,1fr) 330px;gap:12px;min-height:0}.col{min-height:0;overflow:auto;padding-right:2px}.col .panel{margin-bottom:10px}.centerCol{min-width:0;min-height:0;display:flex}.mapPanel{width:100%;min-width:0;min-height:0;display:flex;flex-direction:column;padding:15px}.mapHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}.mapTitleWrap h3{margin:0;color:#fff}.mapTitleWrap .mini{margin-top:3px}.mapWrap{flex:1;min-height:0;display:flex;justify-content:center;align-items:center;background:linear-gradient(180deg,rgba(10,28,54,.74),rgba(8,20,38,.80));border:1px solid rgba(255,255,255,.09);border-radius:20px;padding:10px;position:relative;overflow:hidden}.mapWrap::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(56,189,248,.10),transparent 45%);pointer-events:none}canvas{position:relative;max-width:100%;max-height:100%;border:2px solid rgba(125,211,252,.38);border-radius:20px;background:#d5e4f7;box-shadow:0 26px 60px rgba(0,0,0,.32),0 0 0 8px rgba(255,255,255,.035)}#teacherCanvas{transform:scale(var(--teacher-map-scale,1));transform-origin:center center;transition:transform .12s ease}.teacherMapZoomControls{position:absolute;right:12px;bottom:12px;z-index:18;display:none;align-items:center;gap:6px;padding:6px;border-radius:999px;background:rgba(238,247,255,.92);border:1px solid rgba(125,211,252,.45);box-shadow:0 10px 24px rgba(15,31,58,.20);backdrop-filter:blur(10px)}.teacherMapZoomControls button{width:34px;height:30px;min-height:30px;padding:0;border-radius:999px;background:linear-gradient(135deg,#eef6ff,#dbeafe);color:#12315a;font-weight:1000;box-shadow:none}.teacherMapZoomControls span{min-width:44px;text-align:center;color:#12315a;font-weight:1000;font-size:12px}
 .pillState{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.28);color:#bbf7d0;font-size:12px;font-weight:900}.submitDone{color:#86efac!important}.submitWait{color:#fca5a5!important}
 @media(max-width:1180px){html,body{overflow:auto}.opHeader,.opMain{grid-template-columns:1fr}#operateScreen{overflow:auto}.centerCol{min-height:560px}.summaryPanel{min-height:auto}.headerMeta{grid-template-columns:repeat(2,1fr)}.createGrid{grid-template-columns:1fr}.row{grid-template-columns:1fr}.opButtons{grid-template-columns:1fr 1fr}.createActions{flex-direction:column}.codeBox{align-items:center}.qrPanel{align-self:center}.joinQr{width:138px;height:138px}}@media(max-width:640px){.codeBox{flex-direction:column;text-align:center}.codeValue{font-size:48px}.headerMeta{grid-template-columns:1fr 1fr}.miniCard{min-height:54px}.opButtons{grid-template-columns:1fr}}
 
@@ -3714,6 +3714,34 @@ button.soft{
   .summaryPanel .opButtons button{min-width:0!important;width:100%!important;white-space:normal!important;word-break:keep-all!important;overflow-wrap:break-word!important;}
 }
 
+
+
+/* ===== v3.24 teacher mobile usability patch =====
+   1) Teacher mobile landscape map has +/- controls and starts slightly smaller.
+   2) Teacher mobile portrait room setup keeps compact settings in 2 columns.
+*/
+@media (max-width: 820px) and (orientation: landscape) and (pointer: coarse){
+  .teacherMapZoomControls{display:inline-flex!important;}
+  #teacherCanvas{max-width:100%!important;max-height:100%!important;}
+}
+@media (max-width: 820px) and (orientation: portrait){
+  #createScreen .createGrid > .row.full{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+  }
+  #createScreen .createGrid > .row.full .field label{
+    font-size:11px!important;
+    line-height:1.25!important;
+    min-height:28px!important;
+    display:flex!important;
+    align-items:flex-end!important;
+  }
+  #createScreen .createGrid > .row.full .field input{
+    min-height:42px!important;
+    padding:9px 10px!important;
+    font-size:14px!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -3761,7 +3789,7 @@ button.soft{
     <div class='centerCol'>
       <div class='panel mapPanel'>
         <div class='mapHeader'><div class='mapTitleWrap'><h3>실시간 맵 보기</h3><div class='mini'>중앙 맵에서 학생 위치와 미로 벽을 바로 확인합니다.</div></div><button id='clearBgLiveBtn' class='ghost' style='width:auto'>기본 배경 복원</button></div>
-        <div class='mapWrap'><canvas id='teacherCanvas' width='1060' height='612'></canvas></div>
+        <div class='mapWrap'><div id='teacherMapZoomControls' class='teacherMapZoomControls' aria-label='교사용 맵 크기 조절'><button id='teacherMapZoomOutBtn' type='button'>−</button><span id='teacherMapZoomValue'>90%</span><button id='teacherMapZoomInBtn' type='button'>＋</button></div><canvas id='teacherCanvas' width='1060' height='612'></canvas></div>
       </div>
     </div>
     <div class='col rightCol'>
@@ -3787,6 +3815,13 @@ let bgDataUrl=null,currentState=null,editingRoom=false,lastGameEndPayload=null;
 const createScreen=document.getElementById('createScreen'),operateScreen=document.getElementById('operateScreen');
 const statusBar=document.getElementById('statusBar'),roomTitleBar=document.getElementById('roomTitleBar'),roomBox=document.getElementById('roomBox'),participantBox=document.getElementById('participantBox'),rankingBox=document.getElementById('rankingBox'),teamRankingBox=document.getElementById('teamRankingBox'),battleBox=document.getElementById('battleBox'),logBox=document.getElementById('logBox');
 const canvas=document.getElementById('teacherCanvas'),ctx=canvas.getContext('2d');let bgImage=null;
+const teacherMapZoomOutBtn=document.getElementById('teacherMapZoomOutBtn'), teacherMapZoomInBtn=document.getElementById('teacherMapZoomInBtn'), teacherMapZoomValue=document.getElementById('teacherMapZoomValue');
+let teacherMapScale=(window.matchMedia && window.matchMedia('(max-width: 820px) and (orientation: landscape) and (pointer: coarse)').matches)?0.9:1;
+function applyTeacherMapScale(){document.documentElement.style.setProperty('--teacher-map-scale', String(teacherMapScale));if(teacherMapZoomValue)teacherMapZoomValue.textContent=Math.round(teacherMapScale*100)+'%';}
+function changeTeacherMapScale(delta){teacherMapScale=Math.max(0.75,Math.min(1.15,Number((teacherMapScale+delta).toFixed(2))));applyTeacherMapScale();}
+if(teacherMapZoomOutBtn)teacherMapZoomOutBtn.onclick=(ev)=>{ev.stopPropagation();changeTeacherMapScale(-0.05);};
+if(teacherMapZoomInBtn)teacherMapZoomInBtn.onclick=(ev)=>{ev.stopPropagation();changeTeacherMapScale(0.05);};
+applyTeacherMapScale();
 const ids=['room_title','game_mode','team_count','map_type','question_count','question_time_limit','total_game_time','map_width','map_height','player_speed','score_win','score_draw','score_lose'];
 const gameModeSelect=document.getElementById('game_mode');const mapTypeSelect=document.getElementById('map_type');const teamCountWrap=document.getElementById('teamCountWrap');
 const modeButtons=[...document.querySelectorAll('.modeBtn')];const mapButtons=[...document.querySelectorAll('.mapBtn')];
