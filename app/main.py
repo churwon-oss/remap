@@ -3600,38 +3600,118 @@ button.soft{
 }
 
 
-/* ===== v3.22 teacher mobile header/button layout patch =====
-   - Smartphone portrait: keep status badge from overlapping REMAP title.
-   - Smartphone teacher operation buttons: use a compact horizontal strip, so the
-     ceremony button can appear without reshuffling the whole panel vertically.
+/* ===== v3.23 teacher mobile fit-to-screen patch =====
+   - No horizontal scrolling on teacher smartphone screens.
+   - Header uses real columns instead of an absolute centered title, so the
+     status badge never overlaps REMAP.
+   - Operation buttons wrap inside the available width instead of becoming a
+     horizontally scrollable strip.
 */
-@media (max-width: 820px) and (orientation: portrait){
-  .topbar{height:60px!important;padding:0 10px!important;gap:8px!important;overflow:hidden!important;}
-  .topbar .brand{font-size:17px!important;flex:0 0 76px!important;min-width:76px!important;position:relative;z-index:2;}
-  .topbar .roomTitle{left:44%!important;width:24vw!important;max-width:190px!important;font-size:clamp(23px,5.6vw,34px)!important;letter-spacing:.3px!important;z-index:1;}
-  .topbar .statusBadge{position:relative!important;z-index:3;flex:0 1 34vw!important;max-width:34vw!important;min-width:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;justify-content:center!important;font-size:clamp(10px,2.35vw,12px)!important;padding:7px 9px!important;gap:4px!important;}
+@media (max-width: 820px){
+  html,body{overflow-x:hidden!important;max-width:100vw!important;}
+  .topbar{
+    height:58px!important;
+    display:grid!important;
+    grid-template-columns:auto minmax(0,1fr) auto!important;
+    align-items:center!important;
+    gap:8px!important;
+    padding:0 10px!important;
+    overflow:hidden!important;
+  }
+  .topbar .brand{
+    position:relative!important;
+    left:auto!important;
+    flex:none!important;
+    min-width:0!important;
+    font-size:clamp(16px,4.2vw,20px)!important;
+    white-space:nowrap!important;
+    z-index:2!important;
+  }
+  .topbar .roomTitle{
+    position:static!important;
+    left:auto!important;
+    top:auto!important;
+    transform:none!important;
+    width:auto!important;
+    max-width:none!important;
+    min-width:0!important;
+    text-align:center!important;
+    font-size:clamp(25px,7.2vw,34px)!important;
+    letter-spacing:.2px!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    z-index:1!important;
+  }
+  .topbar .statusBadge{
+    position:relative!important;
+    flex:none!important;
+    min-width:0!important;
+    max-width:clamp(124px,37vw,178px)!important;
+    justify-content:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    font-size:clamp(10px,2.65vw,12px)!important;
+    padding:7px 9px!important;
+    gap:4px!important;
+    z-index:3!important;
+  }
   .topbar .statusBadge::before{flex:0 0 7px!important;width:7px!important;height:7px!important;}
-}
-@media (max-width: 480px) and (orientation: portrait){
-  .topbar .brand{font-size:16px!important;flex-basis:70px!important;min-width:70px!important;}
-  .topbar .roomTitle{left:43%!important;width:22vw!important;font-size:23px!important;}
-  .topbar .statusBadge{flex-basis:37vw!important;max-width:37vw!important;font-size:10px!important;padding:6px 7px!important;}
-}
-@media (max-width: 820px), (max-height: 720px) and (orientation: landscape){
-  .summaryPanel .opButtons{display:flex!important;grid-template-columns:none!important;gap:8px!important;overflow-x:auto!important;overflow-y:hidden!important;-webkit-overflow-scrolling:touch!important;padding:2px 2px 8px!important;margin-top:12px!important;scroll-snap-type:x proximity!important;}
-  .summaryPanel .opButtons.hasCeremony{grid-template-columns:none!important;}
-  .summaryPanel .opButtons button{flex:0 0 128px!important;min-width:128px!important;min-height:56px!important;padding:8px 10px!important;font-size:15px!important;line-height:1.18!important;white-space:normal!important;word-break:keep-all!important;scroll-snap-align:start!important;}
-  .summaryPanel .opButtons #exportQuestionsBtn{flex-basis:154px!important;min-width:154px!important;}
+
+  #operateScreen{overflow-x:hidden!important;max-width:100vw!important;}
+  #operateScreen .panel,
+  #operateScreen .codeBox,
+  #operateScreen .summaryPanel,
+  #operateScreen .centerCol,
+  #operateScreen .sideCol{max-width:100%!important;min-width:0!important;}
+  .opHeader,.opMain{max-width:100%!important;min-width:0!important;}
+  .summaryPanel .opButtons,
+  .summaryPanel .opButtons.hasCeremony{
+    display:grid!important;
+    overflow:visible!important;
+    gap:8px!important;
+    padding:0!important;
+    margin-top:10px!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  .summaryPanel .opButtons button{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    min-height:58px!important;
+    padding:8px 6px!important;
+    font-size:clamp(12px,3.15vw,15px)!important;
+    line-height:1.16!important;
+    white-space:normal!important;
+    word-break:keep-all!important;
+    overflow-wrap:anywhere!important;
+  }
   .summaryPanel .opButtons #ceremonyBtn{order:3!important;}
   .summaryPanel .opButtons #resetBtn{order:4!important;}
   .summaryPanel .opButtons #exportQuestionsBtn{order:5!important;}
   .summaryPanel .opButtons #newRoomBtn{order:6!important;}
-  .summaryPanel .opButtons::-webkit-scrollbar{height:5px;}
-  .summaryPanel .opButtons::-webkit-scrollbar-thumb{background:rgba(91,141,204,.35);border-radius:999px;}
 }
-@media (max-height: 720px) and (orientation: landscape){
-  .summaryPanel .opButtons button{flex-basis:142px!important;min-width:142px!important;}
-  .summaryPanel .opButtons #exportQuestionsBtn{flex-basis:170px!important;min-width:170px!important;}
+@media (max-width: 380px){
+  .topbar{grid-template-columns:auto minmax(58px,1fr) auto!important;gap:6px!important;padding:0 8px!important;}
+  .topbar .brand{font-size:15px!important;}
+  .topbar .roomTitle{font-size:24px!important;}
+  .topbar .statusBadge{max-width:128px!important;font-size:9.5px!important;padding:6px 7px!important;}
+  .summaryPanel .opButtons button{font-size:11.5px!important;min-height:56px!important;padding:7px 4px!important;}
+}
+@media (max-width: 820px) and (orientation: landscape){
+  .topbar{height:54px!important;grid-template-columns:auto minmax(0,1fr) auto!important;}
+  .topbar .brand{font-size:17px!important;}
+  .topbar .roomTitle{font-size:clamp(27px,5.2vw,38px)!important;}
+  .topbar .statusBadge{max-width:220px!important;font-size:12px!important;padding:7px 11px!important;}
+  .summaryPanel .opButtons,
+  .summaryPanel .opButtons.hasCeremony{grid-template-columns:repeat(6,minmax(0,1fr))!important;}
+  .summaryPanel .opButtons button{min-height:54px!important;font-size:clamp(12px,1.85vw,15px)!important;padding:8px 5px!important;}
+}
+@media (min-width:821px) and (max-height:720px) and (orientation:landscape){
+  .summaryPanel .opButtons,
+  .summaryPanel .opButtons.hasCeremony{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;overflow:visible!important;gap:8px!important;}
+  .summaryPanel .opButtons button{min-width:0!important;width:100%!important;white-space:normal!important;word-break:keep-all!important;overflow-wrap:break-word!important;}
 }
 
 </style>
