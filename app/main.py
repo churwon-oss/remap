@@ -684,16 +684,14 @@ async def maybe_finish_battle(battle: Battle) -> None:
     asyncio.create_task(auto_end_after_results_delay())
 
 
-async def end_game(triggered_by: str = 'system') -> None:
-    if state['game_status'] == 'finished':
-        return
-    state['game_status'] = 'finished'
-    log(f'게임 종료 ({triggered_by})')
+def build_game_end_payload() -> dict[str, Any]:
     ranked = rankings()
     best_correct_player = max(state['players'].values(), key=lambda p: (p.correct_count, -p.answer_count, p.nickname), default=None)
     most_battles_player = max(state['players'].values(), key=lambda p: (p.battles_played, p.correct_count, p.nickname), default=None)
-    payload = {
+    return {
         'type': 'game_end',
+        'room_title': state['settings'].get('room_title', DEFAULTS['room_title']),
+        'game_mode': state['settings'].get('game_mode', 'solo'),
         'rankings': ranked,
         'team_rankings': team_rankings(),
         'logs': student_logs(100),
@@ -712,6 +710,14 @@ async def end_game(triggered_by: str = 'system') -> None:
         'most_battles': ({'nickname': most_battles_player.nickname, 'battles_played': most_battles_player.battles_played} if most_battles_player else None),
         'winner_team': (team_rankings()[0] if team_rankings() else None),
     }
+
+
+async def end_game(triggered_by: str = 'system') -> None:
+    if state['game_status'] == 'finished':
+        return
+    state['game_status'] = 'finished'
+    log(f'게임 종료 ({triggered_by})')
+    payload = build_game_end_payload()
     for p in list(state['players'].values()):
         if p.ws:
             await safe_send(p.ws, payload)
@@ -802,6 +808,14 @@ async def index() -> HTMLResponse:
 @app.get('/teacher')
 async def teacher_page() -> HTMLResponse:
     return HTMLResponse(TEACHER_HTML)
+
+
+@app.get('/teacher/ceremony')
+async def teacher_ceremony_page() -> HTMLResponse:
+    payload = build_game_end_payload()
+    payload_json = json.dumps(payload, ensure_ascii=False)
+    html = TEACHER_CEREMONY_HTML.replace('__PAYLOAD__', payload_json)
+    return HTMLResponse(html)
 
 
 @app.get('/api/room/info')
@@ -1189,6 +1203,53 @@ async def ws_teacher(ws: WebSocket) -> None:
     finally:
         state['teacher_clients'].discard(ws)
 
+
+
+TEACHER_CEREMONY_HTML = """
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ReMap 시상식</title>
+<style>
+:root{--bg0:#061326;--bg1:#0b2442;--card:#eef7ff;--text:#0f2545}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Arial,'Noto Sans KR',sans-serif;background:radial-gradient(circle at 30% 0,rgba(56,189,248,.18),transparent 34%),linear-gradient(135deg,#061326,#0b2442 55%,#141b4c);color:#eff8ff}
+.topbar{height:64px;display:flex;align-items:center;justify-content:center;position:sticky;top:0;z-index:5;background:rgba(4,14,28,.88);border-bottom:1px solid rgba(125,211,252,.22);backdrop-filter:blur(10px)}.brand{position:absolute;left:18px;font-weight:1000;font-size:24px;background:linear-gradient(135deg,#38bdf8,#8b5cf6);-webkit-background-clip:text;color:transparent}.title{font-size:38px;font-weight:1000;letter-spacing:-1px;text-shadow:0 0 20px rgba(255,255,255,.42)}.close{position:absolute;right:18px;border:0;border-radius:999px;padding:10px 18px;font-weight:1000;color:#0f2545;background:linear-gradient(180deg,#fff,#dbeafe);cursor:pointer}
+.wrap{width:min(1180px,96vw);margin:18px auto 34px;background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(232,242,255,.96));border:2px solid rgba(15,31,58,.65);border-radius:28px;color:#0f2545;box-shadow:0 28px 90px rgba(0,0,0,.32);padding:22px;overflow:hidden}.kicker{display:inline-flex;gap:8px;align-items:center;padding:8px 18px;border-radius:999px;background:#071b33;color:#fde68a;border:2px solid #fbbf24;font-size:13px;font-weight:1000}.head{text-align:center}.head h1{margin:12px 0 5px;font-size:clamp(34px,5vw,58px);letter-spacing:-1px}.sub{color:#52708f;font-weight:800}.banner{display:flex;gap:14px;align-items:center;margin:18px 0 12px;padding:16px;border-radius:22px;background:linear-gradient(135deg,#dff6ff,#dfe7ff);border:1px solid rgba(91,141,204,.28)}.bannerIcon{font-size:34px}.banner strong{display:block;font-size:24px;color:#0f2545}.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:14px}.panel{background:linear-gradient(180deg,#10223c,#07182d);color:#eef7ff;border-radius:24px;padding:16px;border:1px solid rgba(191,219,254,.22);box-shadow:0 18px 48px rgba(15,31,58,.18)}.panel h2{margin:0 0 12px;font-size:20px}.podium{display:grid;gap:10px}.podiumItem{display:grid;grid-template-columns:68px minmax(0,1fr) 88px;align-items:center;gap:12px;padding:14px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}.podiumItem.rank1{background:linear-gradient(135deg,rgba(251,191,36,.28),rgba(255,255,255,.08));border-color:rgba(251,191,36,.45)}.avatar{width:58px;height:58px;object-fit:contain;filter:drop-shadow(0 10px 16px rgba(0,0,0,.22))}.rankBadge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#e2e8f0;color:#0f2545;font-weight:1000;font-size:12px}.rank1 .rankBadge{background:linear-gradient(135deg,#fde68a,#f59e0b)}.name{display:block;margin-top:6px;color:#fff;font-size:21px;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{color:#bad0ec;font-size:12px;margin-top:3px;font-weight:800}.score{text-align:right;color:#fbbf24;font-size:24px;font-weight:1000}.list{display:grid;gap:8px}.item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);color:#eef7ff}.item strong{color:#fbbf24}.mini{font-size:12px;color:#aecaec}.mvp{display:grid;gap:9px}.mvpCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10)}.mvpIcon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(56,189,248,.25),rgba(139,92,246,.20));font-size:22px}.log{max-height:190px;overflow:auto;display:grid;gap:6px}.empty{padding:28px;text-align:center;color:#aecaec;border:1px dashed rgba(255,255,255,.15);border-radius:18px}.foot{display:flex;justify-content:center;margin-top:16px}.home{border:0;border-radius:16px;padding:13px 34px;font-weight:1000;font-size:16px;background:linear-gradient(135deg,#38bdf8,#7c3aed);color:#fff;cursor:pointer}
+@media(max-width:760px){.topbar{height:56px}.title{font-size:26px}.wrap{margin:8px auto 18px;padding:14px;border-radius:20px}.grid{grid-template-columns:1fr}.head h1{font-size:30px}.podiumItem{grid-template-columns:58px minmax(0,1fr) 64px;padding:10px}.avatar{width:50px;height:50px}.name{font-size:16px}.score{font-size:18px}.close{right:8px;padding:8px 12px}.brand{left:10px;font-size:18px}.banner strong{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="brand">ReMap</div><div class="title">REMAP</div><button class="close" onclick="window.close()">닫기</button></div>
+<main class="wrap">
+  <section class="head"><div class="kicker">🏆 FINAL CEREMONY</div><h1>최종 결과 시상식</h1><div class="sub">교사용 시상식 화면입니다. 학생들과 함께 결과를 확인하세요.</div></section>
+  <div id="banner" class="banner"></div>
+  <section class="grid">
+    <div class="panel"><h2>개인 시상대</h2><div id="podium" class="podium"></div><h2 style="margin-top:18px">전체 개인 순위</h2><div id="fullRank" class="list"></div></div>
+    <div class="panel"><h2>MVP</h2><div id="mvp" class="mvp"></div><h2 style="margin-top:18px">팀 순위</h2><div id="teamRank" class="list"></div><h2 style="margin-top:18px">배틀 로그</h2><div id="logs" class="log"></div></div>
+  </section>
+  <div class="foot"><button class="home" onclick="window.close()">닫기</button></div>
+</main>
+<script>
+const payload=__PAYLOAD__;
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+function charUrl(c){return '/character/'+encodeURIComponent(String(c||'#60a5fa').replace('#',''))+'.svg';}
+function medal(r){return r===1?'🥇':r===2?'🥈':r===3?'🥉':'🏅';}
+const ranks=payload.rankings||[], stats=payload.player_stats||[], teams=payload.team_rankings||[], logs=payload.logs||[];
+const byRank={};ranks.slice(0,3).forEach(r=>byRank[Number(r.rank)||0]=r);
+document.getElementById('banner').innerHTML=payload.winner_team?`<div class="bannerIcon">🏆</div><div><span class="mini">팀전 우승</span><strong>${escapeHtml(payload.winner_team.team)}팀</strong><span>${Number(payload.winner_team.score||0)}점으로 우승!</span></div>`:`<div class="bannerIcon">🎮</div><div><span class="mini">게임 모드</span><strong>개인전 결과</strong><span>개인 순위와 MVP를 확인합니다.</span></div>`;
+function podiumSlot(p,rank){return p?`<div class="podiumItem rank${rank}"><img class="avatar" src="${charUrl(p.color)}" alt=""><div><span class="rankBadge">${medal(rank)} ${rank}위</span><span class="name">${escapeHtml(p.nickname)}</span><div class="meta">${p.team?escapeHtml(p.team)+'팀 · ':''}정답 ${Number(p.correct_count||0)}개 · 배틀 ${Number(p.battles_played||0)}회</div></div><div class="score">${Number(p.score||0)}점</div></div>`:`<div class="podiumItem rank${rank}"><div></div><div><span class="rankBadge">${rank}위</span><span class="name">참가자 없음</span><div class="meta">기록 없음</div></div><div class="score">-</div></div>`;}
+document.getElementById('podium').innerHTML=ranks.length?[1,2,3].map(r=>podiumSlot(byRank[r],r)).join(''):'<div class="empty">아직 결과가 없습니다.</div>';
+document.getElementById('fullRank').innerHTML=stats.length?stats.map((p,i)=>`<div class="item"><span>${i+1}. ${escapeHtml(p.nickname)}${p.team?` <span class="mini">(${escapeHtml(p.team)})</span>`:''}<br><span class="mini">정답 ${Number(p.correct_count||0)}/${Number(p.answer_count||0)} · 배틀 ${Number(p.battles_played||0)}회</span></span><strong>${Number(p.score||0)}점</strong></div>`).join(''):'<div class="empty">참가자 기록이 없습니다.</div>';
+const mvp=ranks[0]||null,best=payload.best_correct||null,most=payload.most_battles||null;
+document.getElementById('mvp').innerHTML=`<div class="mvpCard"><div class="mvpIcon">👑</div><div><b>${mvp?escapeHtml(mvp.nickname):'-'}</b><div class="mini">최고 점수 MVP · ${mvp?Number(mvp.score||0):0}점</div></div></div><div class="mvpCard"><div class="mvpIcon">✅</div><div><b>${best?escapeHtml(best.nickname):'-'}</b><div class="mini">가장 많이 맞힌 학생 · ${best?Number(best.correct_count||0):0}개</div></div></div><div class="mvpCard"><div class="mvpIcon">⚔️</div><div><b>${most?escapeHtml(most.nickname):'-'}</b><div class="mini">가장 많은 배틀 · ${most?Number(most.battles_played||0):0}회</div></div></div>`;
+document.getElementById('teamRank').innerHTML=teams.length?teams.map(t=>`<div class="item"><span>${Number(t.rank||0)}. ${escapeHtml(t.team)}팀</span><strong>${Number(t.score||0)}점</strong></div>`).join(''):'<div class="empty">개인전 모드</div>';
+document.getElementById('logs').innerHTML=logs.length?logs.slice().reverse().map(l=>`<div class="item"><span>${escapeHtml(l.time||'')}</span><span>${escapeHtml(l.message||'')}</span></div>`).join(''):'<div class="empty">배틀 기록 없음</div>';
+</script>
+</body>
+</html>
+"""
 
 STUDENT_HTML = """
 <!doctype html>
@@ -2479,6 +2540,31 @@ button.soft{
   }
 }
 
+/* ===== v3.17 mobile landscape ceremony order fix =====
+   On phone landscape, keep results as 1st -> 2nd -> 3rd instead of podium-style visual order. */
+@media (pointer:coarse) and (orientation:landscape){
+  #endScreen .brandMascotWrap{display:none!important;}
+  #endScreen .awardHeader{display:block!important;margin-bottom:8px!important;}
+  #endScreen .awardMainTitle{font-size:30px!important;line-height:1.08!important;}
+  #endScreen .awardGrid{grid-template-columns:1fr 1fr!important;gap:10px!important;}
+  #endScreen .podiumStage{display:flex!important;flex-direction:column!important;height:auto!important;gap:8px!important;padding:0!important;}
+  #endScreen .podiumStage::before,#endScreen .winnerGlow,#endScreen .winnerConfetti{display:none!important;}
+  #endScreen .podiumSpot.rank1{order:1!important;}
+  #endScreen .podiumSpot.rank2{order:2!important;}
+  #endScreen .podiumSpot.rank3{order:3!important;}
+  #endScreen .podiumSpot{width:100%!important;min-height:72px!important;margin:0!important;padding:8px!important;display:grid!important;grid-template-columns:52px minmax(0,1fr) 52px!important;grid-template-areas:"char medal base" "char name base" "char meta score"!important;align-items:center!important;column-gap:8px!important;border-radius:15px!important;background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.045))!important;border:1px solid rgba(255,255,255,.16)!important;}
+  #endScreen .podiumCharacter,#endScreen .rank1 .podiumCharacter{grid-area:char!important;width:48px!important;height:48px!important;margin:0!important;}
+  #endScreen .podiumCharacterImg,#endScreen .rank1 .podiumCharacterImg{width:48px!important;height:48px!important;object-fit:contain!important;}
+  #endScreen .medalBadge{grid-area:medal!important;justify-self:start!important;margin:0!important;padding:4px 8px!important;font-size:11px!important;}
+  #endScreen .podiumName{grid-area:name!important;text-align:left!important;margin:0!important;font-size:14px!important;}
+  #endScreen .podiumMeta{grid-area:meta!important;text-align:left!important;margin:0!important;font-size:10px!important;}
+  #endScreen .podiumScore,#endScreen .rank1 .podiumScore{grid-area:score!important;justify-self:end!important;margin:0!important;font-size:15px!important;}
+  #endScreen .podiumBase,#endScreen .rank1 .podiumBase,#endScreen .rank2 .podiumBase,#endScreen .rank3 .podiumBase{grid-area:base!important;justify-self:end!important;width:46px!important;height:46px!important;min-height:0!important;margin:0!important;border-radius:13px!important;font-size:26px!important;}
+}
+
+/* Make student question choices look like printed exam numbers. */
+#prepScreen .choiceBadge{font-size:17px!important;font-weight:1000!important;color:#0f355d!important;background:linear-gradient(180deg,#e0fbff,#c8f4ff)!important;border:1px solid rgba(34,211,238,.38)!important;}
+
 
 /* ===== v3.15 mobile end-screen safe-area fix =====
    Keep the Home button above Android/iOS browser navigation bars. */
@@ -3414,15 +3500,6 @@ button.soft{
     <div class='qrModalHint'>학생 스마트폰 카메라로 이 QR을 스캔하세요.</div>
   </div>
 </div>
-<div id='teacherAwardModal' class='teacherAwardModal' aria-hidden='true'>
-  <div class='teacherAwardCard' role='dialog' aria-modal='true' aria-labelledby='teacherAwardTitle'>
-    <button id='teacherAwardClose' class='teacherAwardClose' type='button' aria-label='시상식 닫기'>×</button>
-    <div class='awardKicker'><span>🏆</span><span>FINAL CEREMONY</span></div>
-    <h1 id='teacherAwardTitle'>최종 결과 시상식</h1>
-    <div class='mini'>교사용 시상식 화면입니다. 수업 정리 시간에 학생들과 함께 결과를 확인하세요.</div>
-    <div id='teacherAwardBody' class='teacherAwardBody'></div>
-  </div>
-</div>
 <script>
 let bgDataUrl=null,currentState=null,editingRoom=false,lastGameEndPayload=null;
 const createScreen=document.getElementById('createScreen'),operateScreen=document.getElementById('operateScreen');
@@ -3545,10 +3622,11 @@ ws.onmessage=(ev)=>{
 };
 function resizeCanvas(settings){const w=Number(settings.map_width)||1060;const h=Number(settings.map_height)||612;if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h;if(settings.background_data_url){if(!bgImage||bgImage.src!==settings.background_data_url){const img=new Image();img.onload=()=>currentState&&renderMap(currentState);img.src=settings.background_data_url;bgImage=img;}}else{bgImage=null;}}
 function buildTeacherEndPayload(){const msg=currentState||{};const players=(msg.players||[]).slice().sort((a,b)=>(Number(b.score||0)-Number(a.score||0))||(Number(b.correct_count||0)-Number(a.correct_count||0))||String(a.nickname||'').localeCompare(String(b.nickname||'')));const best=players.slice().sort((a,b)=>(Number(b.correct_count||0)-Number(a.correct_count||0))||(Number(a.answer_count||0)-Number(b.answer_count||0))||String(a.nickname||'').localeCompare(String(b.nickname||'')))[0]||null;const most=players.slice().sort((a,b)=>(Number(b.battles_played||0)-Number(a.battles_played||0))||(Number(b.correct_count||0)-Number(a.correct_count||0))||String(a.nickname||'').localeCompare(String(b.nickname||'')))[0]||null;return {rankings:msg.rankings||players.map((p,i)=>({...p,rank:i+1})),team_rankings:msg.team_rankings||[],logs:msg.student_logs||msg.logs||[],player_stats:players.map(p=>({nickname:p.nickname,team:p.team,score:p.score,correct_count:p.correct_count,answer_count:p.answer_count,battles_played:p.battles_played,color:p.color})),best_correct:best?{nickname:best.nickname,correct_count:best.correct_count}:null,most_battles:most?{nickname:most.nickname,battles_played:most.battles_played}:null,winner_team:(msg.team_rankings&&msg.team_rankings[0])||null};}
-function renderTeacherCeremony(payload){payload=payload||buildTeacherEndPayload();const ranks=payload.rankings||[];const stats=payload.player_stats||[];const logs=payload.logs||[];const byRank={};ranks.slice(0,3).forEach(r=>byRank[Number(r.rank)||0]=r);const slot=(p,rank)=>p?`<div class="teacherPodiumItem rank${rank}"><img src="${buildCharacterSvgUrl(p.color||'#60a5fa')}" alt="${escapeHtml(p.nickname)} 캐릭터"><div><b>${rank}위 · ${escapeHtml(p.nickname)}</b><span>${p.team?escapeHtml(p.team)+'팀 · ':''}정답 ${Number(p.correct_count||0)}개 · 배틀 ${Number(p.battles_played||0)}회</span></div><strong>${Number(p.score||0)}점</strong></div>`:`<div class="teacherPodiumItem rank${rank}"><div></div><div><b>${rank}위</b><span>참가자 없음</span></div><strong>-</strong></div>`;const full=stats.map((p,i)=>`<div class='item'><span>${i+1}. ${escapeHtml(p.nickname)}${p.team?` <span class="mini">(${escapeHtml(p.team)})</span>`:''}</span><strong>${Number(p.score||0)}점</strong></div>`).join('')||'<div class="mini">참가자 기록이 없습니다.</div>';const team=(payload.team_rankings||[]).length?(payload.team_rankings||[]).map(t=>`<div class='item'><span>${escapeHtml(t.team)}팀</span><strong>${Number(t.score||0)}점</strong></div>`).join(''):'<div class="mini">개인전 모드</div>';const logHtml=logs.length?logs.slice().reverse().map(l=>`<div class='item'><span>${escapeHtml(l.time||'')}</span><span>${escapeHtml(l.message||'')}</span></div>`).join(''):'<div class="mini">배틀 로그 없음</div>';document.getElementById('teacherAwardBody').innerHTML=`<div class="teacherAwardPanel"><h3>개인 시상대</h3><div class="teacherPodiumList">${slot(byRank[1],1)}${slot(byRank[2],2)}${slot(byRank[3],3)}</div><h3 style="margin-top:16px">전체 개인 순위</h3><div class="teacherAwardList">${full}</div></div><div class="teacherAwardPanel"><h3>MVP</h3><div class="teacherAwardList"><div class='item'><span>최고 점수</span><strong>${ranks[0]?escapeHtml(ranks[0].nickname):'-'}</strong></div><div class='item'><span>가장 많이 맞힌 학생</span><strong>${payload.best_correct?escapeHtml(payload.best_correct.nickname):'-'}</strong></div><div class='item'><span>가장 많은 배틀</span><strong>${payload.most_battles?escapeHtml(payload.most_battles.nickname):'-'}</strong></div></div><h3 style="margin-top:16px">팀 순위</h3><div class="teacherAwardList">${team}</div><h3 style="margin-top:16px">배틀 로그</h3><div class="teacherAwardLog">${logHtml}</div></div>`;}
-function openTeacherCeremony(){const modal=document.getElementById('teacherAwardModal');renderTeacherCeremony(lastGameEndPayload||buildTeacherEndPayload());modal.classList.add('show');modal.setAttribute('aria-hidden','false');}
-function closeTeacherCeremony(){const modal=document.getElementById('teacherAwardModal');modal.classList.remove('show');modal.setAttribute('aria-hidden','true');}
-document.getElementById('ceremonyBtn').onclick=openTeacherCeremony;document.getElementById('teacherAwardClose').onclick=closeTeacherCeremony;document.getElementById('teacherAwardModal').addEventListener('click',e=>{if(e.target.id==='teacherAwardModal')closeTeacherCeremony();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closeTeacherCeremony();});
+function openTeacherCeremony(){
+  window.open('/teacher/ceremony','remap_teacher_ceremony','width=1280,height=900,noopener,noreferrer');
+}
+const ceremonyBtnEl=document.getElementById('ceremonyBtn');
+if(ceremonyBtnEl){ceremonyBtnEl.onclick=openTeacherCeremony;}
 function drawWalls(walls){(walls||[]).forEach(w=>{const radius=Math.min(14,Math.min(w.w,w.h)*0.22);const g=ctx.createLinearGradient(w.x,w.y,w.x+w.w,w.y+w.h);g.addColorStop(0,'#7fb6ef');g.addColorStop(.55,'#5d8fda');g.addColorStop(1,'#4d78c6');ctx.save();ctx.shadowColor='rgba(59,130,246,0.18)';ctx.shadowBlur=8;ctx.shadowOffsetY=3;ctx.fillStyle=g;roundRect(w.x,w.y,w.w,w.h,radius,true,false);ctx.restore();ctx.strokeStyle='rgba(255,255,255,.42)';ctx.lineWidth=2;roundRect(w.x,w.y,w.w,w.h,radius,false,true);ctx.fillStyle='rgba(255,255,255,.16)';roundRect(w.x+4,w.y+4,Math.max(8,w.w-8),Math.max(6,Math.min(w.h*0.24,16)),Math.max(4,radius*0.5),true,false);});ctx.lineWidth=1;}
 function renderMap(msg){ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);const hasMaze=(msg.map_walls||[]).length>0;if(bgImage&&bgImage.complete){ctx.drawImage(bgImage,0,0,canvas.width,canvas.height)}else{const bg=ctx.createLinearGradient(0,0,canvas.width,canvas.height);bg.addColorStop(0,'#eaf2ff');bg.addColorStop(.55,'#dbeafe');bg.addColorStop(1,'#cfe2ff');ctx.fillStyle=bg;ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='rgba(255,255,255,.30)';ctx.fillRect(14,14,canvas.width-28,canvas.height-28)}ctx.strokeStyle=hasMaze?'rgba(37,99,235,0.08)':'rgba(37,99,235,0.09)';for(let x=0;x<canvas.width;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}for(let y=0;y<canvas.height;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}drawWalls(msg.map_walls||[]);(msg.players||[]).forEach(p=>{try{drawPlayer(p)}catch(e){console.warn('teacher drawPlayer failed',e,p);}})}
 function hexToRgb(hex){const clean=(hex||'#60a5fa').replace('#','');const normalized=clean.length===3?clean.split('').map(c=>c+c).join(''):clean;const n=parseInt(normalized,16);return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};}function darkenColor(hex,factor=0.22){const {r,g,b}=hexToRgb(hex);return `rgb(${Math.max(0,Math.floor(r*(1-factor)))},${Math.max(0,Math.floor(g*(1-factor)))},${Math.max(0,Math.floor(b*(1-factor)))})`;}function lightenColor(hex,factor=0.18){const {r,g,b}=hexToRgb(hex);return `rgb(${Math.min(255,Math.floor(r+(255-r)*factor))},${Math.min(255,Math.floor(g+(255-g)*factor))},${Math.min(255,Math.floor(b+(255-b)*factor))})`;}function alphaColor(hex,alpha){const {r,g,b}=hexToRgb(hex);return `rgba(${r},${g},${b},${alpha})`;}
