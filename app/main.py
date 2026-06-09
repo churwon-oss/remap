@@ -2065,8 +2065,8 @@ button.soft{
   .brand{font-size:17px!important;flex:0 0 auto!important;margin-right:auto!important;}
   .roomTitle{font-size:clamp(20px,4.2vw,30px)!important;width:30vw!important;max-width:30vw!important;z-index:1!important;}
   .statusBadge{max-width:24vw!important;font-size:9px!important;padding:5px 7px!important;}
-  body.show-top-leave .topLeaveBtn{display:inline-flex!important;position:absolute!important;right:8px!important;top:50%!important;transform:translateY(-50%)!important;height:30px!important;padding:0 10px!important;font-size:11px!important;z-index:7!important;}
-  body.show-top-leave .statusBadge{display:inline-flex!important;position:absolute!important;right:76px!important;top:50%!important;transform:translateY(-50%)!important;max-width:26vw!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;z-index:7!important;}
+  body.show-top-leave .topLeaveBtn{display:none!important;}
+  body.show-top-leave .statusBadge{display:inline-flex!important;position:absolute!important;right:8px!important;top:50%!important;transform:translateY(-50%)!important;max-width:30vw!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;z-index:7!important;}
   #gameScreen{height:calc(100dvh - 48px)!important;min-height:calc(100dvh - 48px)!important;padding:5px!important;}
   #gameScreen .studentMapPanel{padding:7px!important;}
   #gameScreen .mapHeader{min-height:28px!important;margin-bottom:5px!important;}
@@ -2568,6 +2568,61 @@ button.soft{
 /* Make student question choices look like printed exam numbers. */
 #prepScreen .choiceBadge{font-size:17px!important;font-weight:1000!important;color:#0f355d!important;background:linear-gradient(180deg,#e0fbff,#c8f4ff)!important;border:1px solid rgba(34,211,238,.38)!important;}
 
+/* ===== v3.20 mobile landscape answer-label visibility fix =====
+   On phone landscape screens the answer column could be too narrow, so the word
+   "정답" was clipped. Give the radio label a real width and shrink only the
+   circled choice number column. */
+@media (orientation:landscape) and (pointer:coarse) and (max-height:560px){
+  #prepScreen .questionChoiceRow{
+    display:grid!important;
+    grid-template-columns:42px minmax(0,1fr) 78px!important;
+    column-gap:6px!important;
+    align-items:center!important;
+    overflow:visible!important;
+  }
+  #prepScreen .questionChoiceRow .choiceBadge{
+    width:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    height:30px!important;
+    min-height:30px!important;
+    padding:0!important;
+    justify-self:center!important;
+    font-size:16px!important;
+    line-height:1!important;
+  }
+  #prepScreen .questionChoiceRow input[data-field='choice']{
+    min-width:0!important;
+    width:100%!important;
+    max-width:100%!important;
+  }
+  #prepScreen .questionChoiceRow .answerRadioLabel{
+    width:76px!important;
+    min-width:76px!important;
+    max-width:76px!important;
+    justify-self:end!important;
+    justify-content:flex-end!important;
+    overflow:visible!important;
+    white-space:nowrap!important;
+    gap:5px!important;
+    font-size:13px!important;
+    line-height:1!important;
+    box-sizing:border-box!important;
+  }
+  #prepScreen .questionChoiceRow .answerRadioLabel input[type='radio']{
+    width:18px!important;
+    height:18px!important;
+    min-width:18px!important;
+    max-width:18px!important;
+    flex:0 0 18px!important;
+  }
+  #prepScreen .questionChoiceRow .answerRadioLabel span{
+    display:inline-block!important;
+    min-width:30px!important;
+    overflow:visible!important;
+  }
+}
+
 
 /* ===== v3.15 mobile end-screen safe-area fix =====
    Keep the Home button above Android/iOS browser navigation bars. */
@@ -2642,6 +2697,115 @@ button.soft{
   }
   #prepScreen #questionsList .qitem textarea{
     min-height:118px!important;
+  }
+}
+
+
+/* ===== v3.21 mobile landscape answer-label hard fix =====
+   The previous landscape rule was limited by viewport height, so some mobile
+   browsers still clipped the Korean word "정답". This final override applies to
+   all phone/tablet landscape layouts and reserves a dedicated answer column. */
+@media (orientation: landscape) and (pointer: coarse),
+       (orientation: landscape) and (max-width: 980px){
+  #prepScreen .questionChoiceRow{
+    display:grid!important;
+    grid-template-columns:34px minmax(0,1fr) 92px!important;
+    grid-template-areas:"num choice answer"!important;
+    column-gap:6px!important;
+    align-items:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+    padding-right:4px!important;
+  }
+  #prepScreen .questionChoiceRow .choiceBadge,
+  #prepScreen .questionChoiceRow .badge{
+    grid-area:num!important;
+    width:30px!important;
+    min-width:30px!important;
+    max-width:30px!important;
+    height:30px!important;
+    min-height:30px!important;
+    padding:0!important;
+    justify-self:center!important;
+    font-size:15px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+  }
+  #prepScreen .questionChoiceRow input[data-field='choice']{
+    grid-area:choice!important;
+    min-width:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+  #prepScreen .questionChoiceRow .answerRadioLabel{
+    grid-area:answer!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    width:90px!important;
+    min-width:90px!important;
+    max-width:90px!important;
+    flex:0 0 90px!important;
+    gap:5px!important;
+    padding:0 2px!important;
+    margin:0!important;
+    overflow:visible!important;
+    white-space:nowrap!important;
+    box-sizing:border-box!important;
+    font-size:12px!important;
+    line-height:1!important;
+    letter-spacing:-0.2px!important;
+  }
+  #prepScreen .questionChoiceRow .answerRadioLabel input[type='radio']{
+    width:18px!important;
+    height:18px!important;
+    min-width:18px!important;
+    max-width:18px!important;
+    flex:0 0 18px!important;
+    margin:0!important;
+  }
+  #prepScreen .questionChoiceRow .answerRadioLabel span{
+    display:inline-block!important;
+    width:auto!important;
+    min-width:28px!important;
+    max-width:none!important;
+    flex:0 0 auto!important;
+    overflow:visible!important;
+    white-space:nowrap!important;
+    text-overflow:clip!important;
+  }
+}
+@media (orientation: landscape) and (pointer: coarse) and (max-width: 700px){
+  #prepScreen .questionChoiceRow{
+    grid-template-columns:30px minmax(0,1fr) 82px!important;
+    column-gap:5px!important;
+  }
+  #prepScreen .questionChoiceRow .choiceBadge,
+  #prepScreen .questionChoiceRow .badge{
+    width:28px!important;
+    min-width:28px!important;
+    max-width:28px!important;
+    height:28px!important;
+    min-height:28px!important;
+    font-size:14px!important;
+  }
+  #prepScreen .questionChoiceRow .answerRadioLabel{
+    width:80px!important;
+    min-width:80px!important;
+    max-width:80px!important;
+    flex-basis:80px!important;
+    gap:4px!important;
+    font-size:11px!important;
+  }
+  #prepScreen .questionChoiceRow .answerRadioLabel input[type='radio']{
+    width:17px!important;
+    height:17px!important;
+    min-width:17px!important;
+    max-width:17px!important;
+    flex-basis:17px!important;
   }
 }
 
