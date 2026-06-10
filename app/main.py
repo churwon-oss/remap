@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import json
 import math
 from io import BytesIO
@@ -63,6 +64,7 @@ def normalize_room_code(value: str | None) -> str:
 
 DEFAULTS = {
     'room_title': 'REMAP 방제목',
+    'teacher_owner': '',
     'room_code': '',
     'game_mode': 'solo',
     'team_count': 4,
@@ -242,21 +244,91 @@ class Battle:
     status: str = 'active'
 
 
-state: dict[str, Any] = {
-    'settings': dict(DEFAULTS),
-    'players': {},
-    'pending_participants': {},
-    'encounters': set(),
-    'battles': {},
-    'game_status': 'idle',
-    'game_started_at': None,
-    'game_end_at': None,
-    'countdown_end_at': None,
-    'teacher_clients': set(),
-    'logs': [],
-    'team_scores': {t: 0 for t in TEAM_ORDER},
-    'last_move_broadcast_at': 0.0,
-}
+def make_room_state() -> dict[str, Any]:
+    return {
+        'settings': dict(DEFAULTS),
+        'players': {},
+        'pending_participants': {},
+        'encounters': set(),
+        'battles': {},
+        'game_status': 'idle',
+        'game_started_at': None,
+        'game_end_at': None,
+        'countdown_end_at': None,
+        'teacher_clients': set(),
+        'logs': [],
+        'team_scores': {t: 0 for t in TEAM_ORDER},
+        'last_move_broadcast_at': 0.0,
+    }
+
+
+rooms: dict[str, dict[str, Any]] = {}
+default_state: dict[str, Any] = make_room_state()
+current_room_code: contextvars.ContextVar[str] = contextvars.ContextVar('current_room_code', default='')
+
+
+def get_room_state(code: str | None, create: bool = False) -> dict[str, Any] | None:
+    room_code = normalize_room_code(code)
+    if not room_code:
+        return default_state if create else None
+    if create and room_code not in rooms:
+        room = make_room_state()
+        room['settings']['room_code'] = room_code
+        rooms[room_code] = room
+    return rooms.get(room_code)
+
+
+def bind_room(code: str | None, create: bool = False):
+    room_code = normalize_room_code(code)
+    if not room_code:
+        return None
+    if get_room_state(room_code, create=create) is None:
+        return None
+    return current_room_code.set(room_code)
+
+
+def unbind_room(token) -> None:
+    if token is not None:
+        try:
+            current_room_code.reset(token)
+        except Exception:
+            pass
+
+
+def current_room_state() -> dict[str, Any]:
+    code = current_room_code.get('')
+    if code and code in rooms:
+        return rooms[code]
+    return default_state
+
+
+class StateProxy:
+    def _target(self) -> dict[str, Any]:
+        return current_room_state()
+
+    def __getitem__(self, key: str) -> Any:
+        return self._target()[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._target()[key] = value
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._target()
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._target().get(key, default)
+
+    def keys(self):
+        return self._target().keys()
+
+    def values(self):
+        return self._target().values()
+
+    def items(self):
+        return self._target().items()
+
+
+state = StateProxy()
 
 
 def log(message: str, kind: str = 'system') -> None:
@@ -276,13 +348,18 @@ def allowed_teams() -> list[str]:
 
 
 def new_room_code() -> str:
-    return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+    alphabet = string.ascii_uppercase + string.digits
+    for _ in range(2000):
+        code = ''.join(random.choice(alphabet) for _ in range(4))
+        if code not in rooms:
+            return code
+    return ''.join(random.choice(alphabet) for _ in range(6))[:4]
 
 
 def reset_runtime(keep_room: bool = True) -> None:
     preserved = {}
     if keep_room:
-        for k in ['room_title', 'room_code', 'game_mode', 'team_count', 'map_type', 'map_width', 'map_height', 'question_count', 'question_time_limit', 'total_game_time', 'score_win', 'score_draw', 'score_lose', 'player_speed', 'background_data_url']:
+        for k in ['room_title', 'teacher_owner', 'room_code', 'game_mode', 'team_count', 'map_type', 'map_width', 'map_height', 'question_count', 'question_time_limit', 'total_game_time', 'score_win', 'score_draw', 'score_lose', 'player_speed', 'background_data_url']:
             preserved[k] = state['settings'].get(k, DEFAULTS[k])
     state['settings'] = dict(DEFAULTS)
     state['settings'].update(preserved)
@@ -388,6 +465,7 @@ def full_payload() -> dict[str, Any]:
         'type': 'state',
         'room': {
             'title': state['settings']['room_title'],
+            'owner': state['settings'].get('teacher_owner', ''),
             'code': state['settings']['room_code'],
             'game_mode': state['settings'].get('game_mode', 'solo'),
             'team_count': state['settings']['team_count'],
@@ -729,23 +807,30 @@ async def end_game(triggered_by: str = 'system') -> None:
 async def game_timer_loop() -> None:
     while True:
         await asyncio.sleep(1)
-        if state['game_status'] == 'countdown':
-            if countdown_remaining() <= 0:
-                state['game_status'] = 'running'
-                state['game_started_at'] = time.time()
-                state['game_end_at'] = time.time() + int(state['settings']['total_game_time'])
-                state['countdown_end_at'] = None
-                log('게임 시작')
-                await broadcast_state()
-            else:
-                await broadcast_state()
-        elif state['game_status'] == 'running':
-            if remaining_time() <= 0:
-                await end_game('timer')
-            else:
-                await maybe_auto_end_all_battles_complete()
-                if state['game_status'] == 'running':
-                    await broadcast_state()
+        for room_code in list(rooms.keys()):
+            token = bind_room(room_code)
+            if token is None:
+                continue
+            try:
+                if state['game_status'] == 'countdown':
+                    if countdown_remaining() <= 0:
+                        state['game_status'] = 'running'
+                        state['game_started_at'] = time.time()
+                        state['game_end_at'] = time.time() + int(state['settings']['total_game_time'])
+                        state['countdown_end_at'] = None
+                        log('게임 시작')
+                        await broadcast_state()
+                    else:
+                        await broadcast_state()
+                elif state['game_status'] == 'running':
+                    if remaining_time() <= 0:
+                        await end_game('timer')
+                    else:
+                        await maybe_auto_end_all_battles_complete()
+                        if state['game_status'] == 'running':
+                            await broadcast_state()
+            finally:
+                unbind_room(token)
 
 
 @app.on_event('startup')
@@ -811,24 +896,39 @@ async def teacher_page() -> HTMLResponse:
 
 
 @app.get('/teacher/ceremony')
-async def teacher_ceremony_page() -> HTMLResponse:
-    payload = build_game_end_payload()
-    payload_json = json.dumps(payload, ensure_ascii=False)
-    html = TEACHER_CEREMONY_HTML.replace('__PAYLOAD__', payload_json)
-    return HTMLResponse(html)
+async def teacher_ceremony_page(room: str = '') -> HTMLResponse:
+    token = bind_room(room) if room else None
+    try:
+        payload = build_game_end_payload()
+        payload_json = json.dumps(payload, ensure_ascii=False)
+        html = TEACHER_CEREMONY_HTML.replace('__PAYLOAD__', payload_json)
+        return HTMLResponse(html)
+    finally:
+        unbind_room(token)
 
 
 @app.get('/api/room/info')
 async def room_info(code: str) -> JSONResponse:
-    valid = bool(state['settings']['room_code']) and code.upper() == state['settings']['room_code']
-    return JSONResponse({'ok': valid, 'title': state['settings']['room_title'] if valid else '', 'game_mode': state['settings'].get('game_mode', 'solo') if valid else 'solo', 'team_count': state['settings']['team_count'] if valid and state['settings'].get('game_mode') == 'team' else 0, 'question_count': state['settings']['question_count'] if valid else 0, 'question_time_limit': state['settings']['question_time_limit'] if valid else 0, 'map_width': state['settings']['map_width'] if valid else 0, 'map_height': state['settings']['map_height'] if valid else 0, 'map_type': state['settings'].get('map_type', 'open') if valid else 'open', 'map_label': map_label() if valid else '', 'status': state['game_status'] if valid else 'invalid'})
+    room_code = normalize_room_code(code)
+    token = bind_room(room_code)
+    if token is None:
+        return JSONResponse({'ok': False, 'title': '', 'game_mode': 'solo', 'team_count': 0, 'question_count': 0, 'question_time_limit': 0, 'map_width': 0, 'map_height': 0, 'map_type': 'open', 'map_label': '', 'status': 'invalid'})
+    try:
+        valid = bool(state['settings']['room_code']) and room_code == state['settings']['room_code']
+        return JSONResponse({'ok': valid, 'title': state['settings']['room_title'] if valid else '', 'teacher_owner': state['settings'].get('teacher_owner', '') if valid else '', 'game_mode': state['settings'].get('game_mode', 'solo') if valid else 'solo', 'team_count': state['settings']['team_count'] if valid and state['settings'].get('game_mode') == 'team' else 0, 'question_count': state['settings']['question_count'] if valid else 0, 'question_time_limit': state['settings']['question_time_limit'] if valid else 0, 'map_width': state['settings']['map_width'] if valid else 0, 'map_height': state['settings']['map_height'] if valid else 0, 'map_type': state['settings'].get('map_type', 'open') if valid else 'open', 'map_label': map_label() if valid else '', 'status': state['game_status'] if valid else 'invalid'})
+    finally:
+        unbind_room(token)
 
 
 @app.post('/api/room/prepare')
 async def room_prepare(payload: dict[str, Any]) -> JSONResponse:
-    code = str(payload.get('code') or '').upper().strip()
+    code = normalize_room_code(payload.get('code'))
+    token = bind_room(code)
+    if token is None:
+        return JSONResponse({'ok': False, 'message': '존재하지 않는 방 코드입니다.'}, status_code=400)
     nickname = clean_text(payload.get('nickname'), MAX_NICKNAME_LEN)
     if not state['settings']['room_code'] or code != state['settings']['room_code']:
+        unbind_room(token)
         return JSONResponse({'ok': False, 'message': '존재하지 않는 방 코드입니다.'}, status_code=400)
     if state['game_status'] in ('running', 'countdown'):
         return JSONResponse({'ok': False, 'message': '이미 시작된 방입니다.'}, status_code=400)
@@ -846,28 +946,43 @@ async def room_prepare(payload: dict[str, Any]) -> JSONResponse:
 @app.post('/api/room/cancel_prepare')
 async def room_cancel_prepare(payload: dict[str, Any]) -> JSONResponse:
     pending_id = str(payload.get('pending_id') or '').strip()
-    if pending_id and pending_id in state['pending_participants']:
-        state['pending_participants'].pop(pending_id, None)
-        await broadcast_state()
+    room_code = normalize_room_code(payload.get('code'))
+    candidate_codes = [room_code] if room_code else list(rooms.keys())
+    for code in candidate_codes:
+        token = bind_room(code)
+        if token is None:
+            continue
+        try:
+            if pending_id and pending_id in state['pending_participants']:
+                state['pending_participants'].pop(pending_id, None)
+                await broadcast_state()
+                break
+        finally:
+            unbind_room(token)
     return JSONResponse({'ok': True})
 
 
 @app.get('/api/state')
-async def get_state() -> JSONResponse:
-    return JSONResponse(full_payload())
+async def get_state(room: str = '') -> JSONResponse:
+    room_code = normalize_room_code(room)
+    token = bind_room(room_code) if room_code else None
+    try:
+        return JSONResponse(full_payload())
+    finally:
+        unbind_room(token)
 
 
 @app.post('/api/teacher/create_room')
 async def create_room(payload: dict[str, Any]) -> JSONResponse:
-    for p in list(state['players'].values()):
-        if p.ws:
-            await safe_send(p.ws, {'type': 'reset', 'target': 'home', 'message': '새 방이 생성되어 방 코드를 다시 입력해야 합니다.'})
-            try:
-                await p.ws.close()
-            except Exception:
-                pass
+    # Multiple teachers can use the same server. Every teacher-created room gets
+    # its own state bucket keyed by the room code, so rooms do not interfere.
+    room_code = new_room_code()
+    token = bind_room(room_code, create=True)
+    if token is None:
+        return JSONResponse({'ok': False, 'message': '방 코드를 생성하지 못했습니다.'}, status_code=500)
     reset_runtime(keep_room=False)
     room_title = clean_text(payload.get('room_title'), MAX_ROOM_TITLE_LEN) or DEFAULTS['room_title']
+    teacher_owner = clean_text(payload.get('teacher_owner'), MAX_NICKNAME_LEN)
     map_type = str(payload.get('map_type') or DEFAULTS['map_type']).strip()
     if map_type not in {'open', 'maze'}:
         map_type = DEFAULTS['map_type']
@@ -877,7 +992,8 @@ async def create_room(payload: dict[str, Any]) -> JSONResponse:
     else:
         background_data_url = None
     state['settings']['room_title'] = room_title
-    state['settings']['room_code'] = new_room_code()
+    state['settings']['teacher_owner'] = teacher_owner
+    state['settings']['room_code'] = room_code
     state['settings']['game_mode'] = 'team' if str(payload.get('game_mode') or 'solo') == 'team' else 'solo'
     state['settings']['team_count'] = clamp_int(payload.get('team_count'), DEFAULTS['team_count'], 2, 5) if state['settings']['game_mode'] == 'team' else 0
     state['settings']['map_type'] = map_type
@@ -894,12 +1010,18 @@ async def create_room(payload: dict[str, Any]) -> JSONResponse:
     state['game_status'] = 'lobby'
     log(f"방 생성: {state['settings']['room_title']} ({state['settings']['room_code']})")
     await broadcast_state()
-    return JSONResponse({'ok': True, 'room_code': state['settings']['room_code'], 'settings': state['settings']})
+    response = JSONResponse({'ok': True, 'room_code': state['settings']['room_code'], 'settings': state['settings']})
+    unbind_room(token)
+    return response
 
 
 @app.post('/api/teacher/start')
-async def start_game() -> JSONResponse:
+async def start_game(room: str = '') -> JSONResponse:
+    token = bind_room(room)
+    if token is None:
+        return JSONResponse({'ok': False, 'message': '관리할 방을 찾을 수 없습니다.'}, status_code=404)
     if not state['settings']['room_code']:
+        unbind_room(token)
         return JSONResponse({'ok': False, 'message': '먼저 방을 생성하세요.'}, status_code=400)
     state['game_status'] = 'countdown'
     state['game_started_at'] = None
@@ -907,17 +1029,27 @@ async def start_game() -> JSONResponse:
     state['countdown_end_at'] = time.time() + 4
     log('게임 시작 카운트다운')
     await broadcast_state()
+    unbind_room(token)
     return JSONResponse({'ok': True})
 
 
 @app.post('/api/teacher/end')
-async def teacher_end_game() -> JSONResponse:
-    await end_game('teacher')
-    return JSONResponse({'ok': True})
+async def teacher_end_game(room: str = '') -> JSONResponse:
+    token = bind_room(room)
+    if token is None:
+        return JSONResponse({'ok': False, 'message': '관리할 방을 찾을 수 없습니다.'}, status_code=404)
+    try:
+        await end_game('teacher')
+        return JSONResponse({'ok': True})
+    finally:
+        unbind_room(token)
 
 
 @app.post('/api/teacher/new_room_setup')
-async def teacher_new_room_setup() -> JSONResponse:
+async def teacher_new_room_setup(room: str = '') -> JSONResponse:
+    token = bind_room(room)
+    if token is None:
+        return JSONResponse({'ok': True})
     # [새 방 설정]은 기존 방을 닫고 학생 화면을 코드 입력 첫 화면으로 돌려보낸다.
     # 게임이 아직 시작되지 않은 lobby 상태에서는 /api/teacher/end가 동작하지 않으므로
     # 별도의 방 닫기 흐름으로 참가자/대기자를 모두 정리한다.
@@ -931,18 +1063,26 @@ async def teacher_new_room_setup() -> JSONResponse:
     reset_runtime(keep_room=False)
     log('새 방 설정을 위해 기존 방을 닫았습니다.')
     await broadcast_state()
+    unbind_room(token)
     return JSONResponse({'ok': True})
 
 
 @app.post('/api/teacher/clear_background')
-async def clear_background() -> JSONResponse:
+async def clear_background(room: str = '') -> JSONResponse:
+    token = bind_room(room)
+    if token is None:
+        return JSONResponse({'ok': False, 'message': '관리할 방을 찾을 수 없습니다.'}, status_code=404)
     state['settings']['background_data_url'] = None
     log('기본 배경 복원')
     await broadcast_state()
+    unbind_room(token)
     return JSONResponse({'ok': True})
 
 @app.post('/api/teacher/reset')
-async def teacher_reset_game() -> JSONResponse:
+async def teacher_reset_game(room: str = '') -> JSONResponse:
+    token = bind_room(room)
+    if token is None:
+        return JSONResponse({'ok': False, 'message': '관리할 방을 찾을 수 없습니다.'}, status_code=404)
     for p in list(state['players'].values()):
         if p.ws:
             await safe_send(p.ws, {'type': 'reset', 'message': '선생님이 다음 게임 준비를 시작했습니다.'})
@@ -953,6 +1093,7 @@ async def teacher_reset_game() -> JSONResponse:
     reset_runtime(keep_room=True)
     log('다음 게임 준비 완료')
     await broadcast_state()
+    unbind_room(token)
     return JSONResponse({'ok': True})
 
 
@@ -1030,28 +1171,36 @@ def build_questions_workbook_bytes() -> bytes:
 
 
 @app.get('/api/teacher/export_questions.xlsx')
-async def export_questions_xlsx() -> StreamingResponse:
+async def export_questions_xlsx(room: str = '') -> StreamingResponse:
+    token = bind_room(room)
+    if token is None:
+        token = None
     filename = f"remap_questions_{state['settings'].get('room_code') or 'room'}.xlsx"
     payload = build_questions_workbook_bytes()
     headers = {'Content-Disposition': f'attachment; filename="{filename}"'}
-    return StreamingResponse(
+    response = StreamingResponse(
         BytesIO(payload),
         media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         headers=headers,
     )
+    unbind_room(token)
+    return response
 
 @app.websocket('/ws/player')
 @app.websocket('//ws/player')
 async def ws_player(ws: WebSocket) -> None:
     await ws.accept()
     player_id: str | None = None
+    room_token = None
     try:
         while True:
             msg = await ws.receive_json()
             msg_type = msg.get('type')
             if msg_type == 'join':
-                room_code = str(msg.get('room_code') or '').upper().strip()
-                if not state['settings']['room_code'] or room_code != state['settings']['room_code']:
+                room_code = normalize_room_code(msg.get('room_code'))
+                if room_token is None:
+                    room_token = bind_room(room_code)
+                if room_token is None or not state['settings']['room_code'] or room_code != state['settings']['room_code']:
                     await safe_send(ws, {'type': 'error', 'message': '방이 종료되었거나 새 방으로 변경되었습니다. 나가기를 누른 뒤 다시 입장해주세요.'})
                     continue
                 if state['game_status'] in ('running', 'countdown'):
@@ -1187,11 +1336,14 @@ async def ws_player(ws: WebSocket) -> None:
             log(f"{state['players'][player_id].nickname} 퇴장")
             del state['players'][player_id]
             await broadcast_state()
+        unbind_room(room_token)
 
 
 @app.websocket('/ws/teacher')
 @app.websocket('//ws/teacher')
 async def ws_teacher(ws: WebSocket) -> None:
+    room_code = normalize_room_code(ws.query_params.get('room'))
+    room_token = bind_room(room_code) if room_code else None
     await ws.accept()
     state['teacher_clients'].add(ws)
     try:
@@ -1202,6 +1354,8 @@ async def ws_teacher(ws: WebSocket) -> None:
         pass
     finally:
         state['teacher_clients'].discard(ws)
+        unbind_room(room_token)
+
 
 
 
@@ -2853,6 +3007,10 @@ button.soft{
     padding-right:4px;
   }
 }
+
+/* ===== v3.27 multi-teacher room owner layout ===== */
+.teacherRoomMetaRow{display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(180px,.6fr)!important;gap:10px!important;}
+@media(max-width:640px){.teacherRoomMetaRow{grid-template-columns:1fr!important;}}
 </style>
 </head>
 <body>
@@ -3086,7 +3244,7 @@ function renderTeams(count=4){teamWrap.innerHTML=''; ['A','B','C','D','E'].slice
 function renderColors(){colorWrap.innerHTML=''; const colorNames=['연빨강','빨강','진빨강','핑크','살구','주황','호박','노랑','라임','초록','민트','청록','하늘','파랑','진파랑','남색','연보라','보라','진보라','마젠타','갈색','회색','흰색','검정']; CHAR_COLORS.forEach((c,idx)=>{const b=document.createElement('button');b.className='colorBtn'+(state.selectedColor===c?' active':'');b.style.background=c;b.title=colorNames[idx]||c;b.onclick=()=>{state.selectedColor=c;renderColors()};colorWrap.appendChild(b);});}
 function renderQuestionEditor(){questionsList.innerHTML='';const required=state.roomInfo?.question_count||0;document.getElementById('requiredCount').textContent=`문제 ${required}개 필수`;if(!state.questions.length){questionsList.innerHTML='<div class="mini" style="padding-top:8px">방 정보를 먼저 확인하세요.</div>';return;}state.questions.forEach((q,idx)=>{const div=document.createElement('div');div.className='qitem';const text=escapeHtml(q.text||'');div.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="color:#f4fbff">문제 ${idx+1}</strong><span class="badge">필수</span></div><textarea data-field="text" data-idx="${idx}" rows="2" style="width:100%;margin-top:8px" placeholder="문제 내용을 입력하세요">${text}</textarea>${['①','②','③','④'].map((n,i)=>`<div class="questionChoiceRow"><span class="choiceBadge">${n}</span><input data-field="choice" data-cidx="${i}" data-idx="${idx}" value="${escapeHtml(q.choices[i]||'')}" style="flex:1" /><label class="answerRadioLabel"><input type="radio" name="ans_${idx}" data-field="answer" data-idx="${idx}" value="${i}" ${q.answer===i?'checked':''}/><span>정답</span></label></div>`).join('')}`;questionsList.appendChild(div);});document.querySelectorAll('[data-field="text"]').forEach(el=>el.oninput=e=>state.questions[Number(el.dataset.idx)].text=e.target.value);document.querySelectorAll('[data-field="choice"]').forEach(el=>el.oninput=e=>state.questions[Number(el.dataset.idx)].choices[Number(el.dataset.cidx)]=e.target.value);document.querySelectorAll('[data-field="answer"]').forEach(el=>el.onchange=e=>state.questions[Number(el.dataset.idx)].answer=Number(e.target.value));}
 function setRoomInfo(info){state.roomInfo=info;state.pendingId=info.pending_id||state.pendingId;state.roomCode=roomCodeInput.value.trim().toUpperCase()||state.roomCode;state.roomTitle=info.title||'';state.nickname=(nicknameInput.value.trim()||state.nickname).trim();if(state.nickname&&!nicknameInput.value.trim()){nicknameInput.value=state.nickname;}roomTitleBar.textContent='REMAP';document.getElementById('infoTitle').textContent=info.title||'-';document.getElementById('infoCode').textContent=state.roomCode||'-';document.getElementById('infoMode').textContent=info.game_mode==='team'?`${info.team_count}팀전`:'개인전';document.getElementById('infoQuestions').textContent=`${info.question_count}문제`;document.getElementById('infoTime').textContent=`${info.question_time_limit}초`;document.getElementById('infoMap').textContent=info.map_label||'-';infoNickname.textContent=state.nickname||nicknameInput.value.trim()||'-';state.selectedTeam='A';ensureQuestionCount(info.question_count);if(info.game_mode==='team'){teamSection.style.display='block';renderTeams(info.team_count);colorWrap.style.display='none';colorHelp.textContent='팀전에서는 캐릭터 색상이 팀별로 고정됩니다.';}else{teamSection.style.display='none';teamWrap.innerHTML='';colorWrap.style.display='grid';colorHelp.textContent='캐릭터 색상 선택';renderColors();}renderQuestionEditor();joinScreen.style.display='none';prepScreen.style.display='flex';document.body.classList.add('show-top-leave');}
-async function cancelPending(){if(state.pendingId){try{await fetch('/api/room/cancel_prepare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pending_id:state.pendingId})});}catch(e){}state.pendingId=null;}}
+async function cancelPending(){if(state.pendingId){try{await fetch('/api/room/cancel_prepare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pending_id:state.pendingId,code:state.roomCode||roomCodeInput.value.trim().toUpperCase()})});}catch(e){}state.pendingId=null;}}
 async function checkRoom(){const code=roomCodeInput.value.trim().toUpperCase();const nickname=(nicknameInput.value.trim()||state.nickname).trim();if(!code){showToast('방 코드를 입력하세요.');return;}if(!nickname){showToast('닉네임을 입력하세요.');return;}state.nickname=nickname;nicknameInput.value=nickname;const res=await fetch('/api/room/prepare',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,nickname})});const data=await res.json();if(!data.ok){roomInfo.textContent=data.message||'입장할 수 없습니다.';showToast(data.message||'입장할 수 없습니다.');return;}roomInfo.textContent=`${data.title} · ${data.game_mode==='team'?data.team_count+'팀전':'개인전'} · ${data.question_count}문제`;setRoomInfo(data);} 
 checkRoomBtn.onclick=checkRoom;
 joinBtn.onclick=()=>{if(!state.roomInfo){showToast('먼저 방 코드를 확인하세요.');return;}const nick=(nicknameInput.value.trim()||state.nickname).trim();if(!nick){showToast('닉네임을 입력하세요.');return;}state.nickname=nick;nicknameInput.value=nick;const required=state.roomInfo.question_count;ensureQuestionCount(required);const validQuestions=state.questions.length===required&&!state.questions.some(q=>!q.text.trim()||q.choices.some(c=>!c.trim()));if(!validQuestions){showToast(`문제 ${required}개를 모두 입력하세요.`);return;}connectPlayer(state.roomCode)};
@@ -3953,7 +4111,7 @@ button.soft{
     <h1>방 생성 / 설정</h1>
     <div class='mini'>처음 사용해도 바로 이해되도록 설정 화면만 먼저 보여줍니다. 방을 만들면 맵 중심 운영 화면으로 전환됩니다.</div>
     <div class='createGrid'>
-      <div class='field full'><label>방 제목</label><input id='room_title' value='REMAP 방제목'></div>
+      <div class='row full teacherRoomMetaRow'><div class='field'><label>방 제목</label><input id='room_title' value='REMAP 방제목'></div><div class='field'><label>방장</label><input id='teacher_owner' value='' placeholder='예: 교사1'></div></div>
       <div class='field'><label>게임 모드</label><input id='game_mode' type='hidden' value='solo'><div class='modeButtons'><button type='button' class='modeBtn active' data-mode='solo'>개인전</button><button type='button' class='modeBtn' data-mode='team'>팀전</button></div></div>
       <div id='teamCountWrap' class='field'><label>팀 수</label><input id='team_count' type='number' min='2' max='5' value='4'></div>
       <div class='field full'><label>맵 종류</label><input id='map_type' type='hidden' value='open'><div class='mapButtons'><button type='button' class='mapBtn active' data-map='open'>오픈 스퀘어<small>넓은 자유 이동형</small></button><button type='button' class='mapBtn' data-map='maze'>미로형 맵<small>벽을 피해 만나는 구조</small></button></div></div>
@@ -4020,7 +4178,7 @@ function changeTeacherMapScale(delta){teacherMapScale=Math.max(0.55,Math.min(1.1
 if(teacherMapZoomOutBtn)teacherMapZoomOutBtn.onclick=(ev)=>{ev.stopPropagation();changeTeacherMapScale(-0.05);};
 if(teacherMapZoomInBtn)teacherMapZoomInBtn.onclick=(ev)=>{ev.stopPropagation();changeTeacherMapScale(0.05);};
 applyTeacherMapScale();
-const ids=['room_title','game_mode','team_count','map_type','question_count','question_time_limit','total_game_time','map_width','map_height','player_speed','score_win','score_draw','score_lose'];
+const ids=['room_title','teacher_owner','game_mode','team_count','map_type','question_count','question_time_limit','total_game_time','map_width','map_height','player_speed','score_win','score_draw','score_lose'];
 const gameModeSelect=document.getElementById('game_mode');const mapTypeSelect=document.getElementById('map_type');const teamCountWrap=document.getElementById('teamCountWrap');
 const modeButtons=[...document.querySelectorAll('.modeBtn')];const mapButtons=[...document.querySelectorAll('.mapBtn')];
 function syncModeUI(){const isTeam=gameModeSelect.value==='team';teamCountWrap.style.display=isTeam?'block':'none';modeButtons.forEach(btn=>btn.classList.toggle('active',btn.dataset.mode===gameModeSelect.value));}
@@ -4088,18 +4246,21 @@ function applyStatusStyle(status){statusBar.classList.remove('status-running','s
 function updateCeremonyButton(status){const btn=document.getElementById('ceremonyBtn');const box=document.getElementById('opButtons');const show=status==='finished';if(btn){btn.classList.toggle('show',show);}if(box){box.classList.toggle('hasCeremony',show);}}
 function showCreate(){editingRoom=true;createScreen.style.display='flex';operateScreen.style.display='none';roomTitleBar.textContent='REMAP';statusBar.textContent='[현재상황: 설정 중]';applyStatusStyle('idle');updateCeremonyButton('idle')}
 function showOperate(){editingRoom=false;createScreen.style.display='none';operateScreen.style.display='grid'}
-function updateScreen(msg){const hasRoom=!!(msg.room&&msg.room.code);if(!hasRoom||editingRoom){if(!hasRoom){createScreen.style.display='flex';operateScreen.style.display='none';roomTitleBar.textContent='REMAP';statusBar.textContent='[현재상황: 설정 전]';applyStatusStyle('idle');updateCeremonyButton('idle')}return;}showOperate();}
+function updateScreen(msg){const hasRoom=!!(msg.room&&msg.room.code);if(!hasRoom){createScreen.style.display='flex';operateScreen.style.display='none';roomTitleBar.textContent='REMAP';statusBar.textContent='[현재상황: 설정 전]';applyStatusStyle('idle');updateCeremonyButton('idle');return;}if(editingRoom&&!teacherRoomCode){return;}showOperate();}
 document.getElementById('bgFile').onchange=(e)=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{bgDataUrl=reader.result;};reader.readAsDataURL(file);};
 document.getElementById('clearBgPreBtn').onclick=()=>{bgDataUrl=null;document.getElementById('bgFile').value='';};
-document.getElementById('createBtn').onclick=async()=>{const btn=document.getElementById('createBtn');btn.disabled=true;btn.textContent='방 생성 중...';const payload={};ids.forEach(id=>{const el=document.getElementById(id);payload[id]=(id==='room_title'||id==='game_mode'||id==='map_type')?el.value:Number(el.value);});payload.background_data_url=bgDataUrl||null;editingRoom=false;const res=await fetch('/api/teacher/create_room',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});if(res.ok){showOperate();}else{editingRoom=true;showCreate();}btn.disabled=false;btn.textContent='방 생성';};
-document.getElementById('startBtn').onclick=()=>fetch('/api/teacher/start',{method:'POST'});
-document.getElementById('endBtn').onclick=()=>fetch('/api/teacher/end',{method:'POST'});
-document.getElementById('resetBtn').onclick=()=>fetch('/api/teacher/reset',{method:'POST'});
-document.getElementById('exportQuestionsBtn').onclick=()=>{window.location.href='/api/teacher/export_questions.xlsx';};
-document.getElementById('newRoomBtn').onclick=async()=>{const btn=document.getElementById('newRoomBtn');btn.disabled=true;try{if(currentState&&['countdown','running'].includes(currentState.game_status)){await fetch('/api/teacher/end',{method:'POST'});}else{await fetch('/api/teacher/new_room_setup',{method:'POST'});}}catch(e){console.error(e);}finally{btn.disabled=false;showCreate();}};
-document.getElementById('clearBgLiveBtn').onclick=()=>fetch('/api/teacher/clear_background',{method:'POST'});
-const wsUrl=new URL('/ws/teacher', location.href);wsUrl.protocol=location.protocol==='https:'?'wss:':'ws:';const ws=new WebSocket(wsUrl.href);
-ws.onmessage=(ev)=>{
+let teacherRoomCode=(new URLSearchParams(location.search).get('room')||'').trim().toUpperCase().slice(0,4);
+let teacherWs=null;
+function teacherApi(path){const u=new URL(path,location.href);if(teacherRoomCode)u.searchParams.set('room',teacherRoomCode);return u.href;}
+function setTeacherRoomCode(code){teacherRoomCode=String(code||'').trim().toUpperCase().slice(0,4);const u=new URL(location.href);if(teacherRoomCode){u.searchParams.set('room',teacherRoomCode);}else{u.searchParams.delete('room');}history.replaceState(null,'',u.href);}
+function connectTeacherSocket(){
+  if(teacherWs){try{teacherWs.close();}catch(e){}}
+  const wsUrl=new URL('/ws/teacher', location.href);
+  wsUrl.protocol=location.protocol==='https:'?'wss:':'ws:';
+  if(teacherRoomCode)wsUrl.searchParams.set('room',teacherRoomCode);
+  const ws=new WebSocket(wsUrl.href);
+  teacherWs=ws;
+  ws.onmessage=(ev)=>{
   const msg=JSON.parse(ev.data);
   if(msg.type==='game_end'){lastGameEndPayload=msg;updateCeremonyButton('finished');return;}
   if(msg.type!=='state')return;
@@ -4123,7 +4284,7 @@ ws.onmessage=(ev)=>{
   document.getElementById('remainValue').textContent=fmt(msg.remaining_time);
   document.getElementById('teamCountValue').textContent=(msg.team_counts&&msg.team_counts.length?msg.team_counts.map(t=>`${t.team}:${Number(t.count||0)}`).join(' / '):'-');
   document.getElementById('unsubmittedValue').textContent=(Number(msg.unsubmitted_count||0))+'명';
-  roomBox.innerHTML=`<div class='item'><span>방 제목</span><strong>${escapeHtml(room.title||'-')}</strong></div><div class='item'><span>방 코드</span><strong>${escapeHtml(room.code||'-')}</strong></div><div class='item'><span>게임 모드</span><strong>${teamMode?'팀전':'개인전'}</strong></div>${teamMode?`<div class='item'><span>팀 수</span><strong>${Number(room.team_count||0)||'-'}</strong></div>`:''}<div class='item'><span>맵 종류</span><strong>${escapeHtml(room.map_label||'-')}</strong></div><div class='item'><span>배틀 문제 수</span><strong>${Number(settings.question_count||0)}</strong></div><div class='item'><span>제한시간</span><strong>${Number(settings.question_time_limit||0)}초</strong></div><div class='item'><span>점수</span><strong>${Number(settings.score_win||0)}/${Number(settings.score_draw||0)}/${Number(settings.score_lose||0)}</strong></div>`;
+  roomBox.innerHTML=`<div class='item'><span>방 제목</span><strong>${escapeHtml(room.title||'-')}</strong></div><div class='item'><span>방장</span><strong>${escapeHtml(room.owner||settings.teacher_owner||'-')}</strong></div><div class='item'><span>방 코드</span><strong>${escapeHtml(room.code||'-')}</strong></div><div class='item'><span>게임 모드</span><strong>${teamMode?'팀전':'개인전'}</strong></div>${teamMode?`<div class='item'><span>팀 수</span><strong>${Number(room.team_count||0)||'-'}</strong></div>`:''}<div class='item'><span>맵 종류</span><strong>${escapeHtml(room.map_label||'-')}</strong></div><div class='item'><span>배틀 문제 수</span><strong>${Number(settings.question_count||0)}</strong></div><div class='item'><span>제한시간</span><strong>${Number(settings.question_time_limit||0)}초</strong></div><div class='item'><span>점수</span><strong>${Number(settings.score_win||0)}/${Number(settings.score_draw||0)}/${Number(settings.score_lose||0)}</strong></div>`;
   participantBox.innerHTML=participants.length?participants.map(p=>`<div class='item'><span>${escapeHtml(p.nickname)}${p.team?` (${escapeHtml(p.team)})`:''}</span><strong class='${p.submitted?'submitDone':'submitWait'}'>${p.submitted?'제출 완료':'미제출'}</strong></div>`).join(''):'<div class="mini">아직 참가자가 없습니다.</div>';
   rankingBox.innerHTML=rankings.length?rankings.map(r=>`<div class='item'><span>${Number(r.rank)||'-'}. ${escapeHtml(r.nickname)}${teamMode&&r.team?` (${escapeHtml(r.team)})`:''}</span><strong>${Number(r.score||0)}</strong></div>`).join(''):'<div class="mini">순위 없음</div>';
   teamRankingBox.innerHTML=teamMode?(teamRankings.length?teamRankings.map(r=>`<div class='item'><span>${Number(r.rank)||'-'}. ${escapeHtml(r.team)}팀</span><strong>${Number(r.score||0)}</strong></div>`).join(''):'<div class="mini">팀 순위 없음</div>'):'<div class="mini">개인전 모드</div>';
@@ -4134,11 +4295,23 @@ ws.onmessage=(ev)=>{
   syncMapUI();
   resizeCanvas(settings);
   renderMap(msg);
+  if(room.code && room.code!==teacherRoomCode){setTeacherRoomCode(room.code);}
 };
+  ws.onclose=()=>{if(teacherWs===ws){teacherWs=null;}};
+}
+document.getElementById('createBtn').onclick=async()=>{const btn=document.getElementById('createBtn');btn.disabled=true;btn.textContent='방 생성 중...';const payload={};ids.forEach(id=>{const el=document.getElementById(id);payload[id]=(id==='room_title'||id==='teacher_owner'||id==='game_mode'||id==='map_type')?el.value:Number(el.value);});payload.background_data_url=bgDataUrl||null;editingRoom=false;const res=await fetch('/api/teacher/create_room',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});if(res.ok){const data=await res.json();if(data.room_code){setTeacherRoomCode(data.room_code);connectTeacherSocket();}showOperate();}else{editingRoom=true;showCreate();}btn.disabled=false;btn.textContent='방 생성';};
+document.getElementById('startBtn').onclick=()=>fetch(teacherApi('/api/teacher/start'),{method:'POST'});
+document.getElementById('endBtn').onclick=()=>fetch(teacherApi('/api/teacher/end'),{method:'POST'});
+document.getElementById('resetBtn').onclick=()=>fetch(teacherApi('/api/teacher/reset'),{method:'POST'});
+document.getElementById('exportQuestionsBtn').onclick=()=>{window.location.href=teacherApi('/api/teacher/export_questions.xlsx');};
+document.getElementById('newRoomBtn').onclick=async()=>{const btn=document.getElementById('newRoomBtn');btn.disabled=true;try{if(currentState&&['countdown','running'].includes(currentState.game_status)){await fetch(teacherApi('/api/teacher/end'),{method:'POST'});}else{await fetch(teacherApi('/api/teacher/new_room_setup'),{method:'POST'});}}catch(e){console.error(e);}finally{setTeacherRoomCode('');connectTeacherSocket();btn.disabled=false;showCreate();}};
+document.getElementById('clearBgLiveBtn').onclick=()=>fetch(teacherApi('/api/teacher/clear_background'),{method:'POST'});
+
+connectTeacherSocket();
 function resizeCanvas(settings){const w=Number(settings.map_width)||1060;const h=Number(settings.map_height)||612;if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h;if(settings.background_data_url){if(!bgImage||bgImage.src!==settings.background_data_url){const img=new Image();img.onload=()=>currentState&&renderMap(currentState);img.src=settings.background_data_url;bgImage=img;}}else{bgImage=null;}}
 function buildTeacherEndPayload(){const msg=currentState||{};const players=(msg.players||[]).slice().sort((a,b)=>(Number(b.score||0)-Number(a.score||0))||(Number(b.correct_count||0)-Number(a.correct_count||0))||String(a.nickname||'').localeCompare(String(b.nickname||'')));const best=players.slice().sort((a,b)=>(Number(b.correct_count||0)-Number(a.correct_count||0))||(Number(a.answer_count||0)-Number(b.answer_count||0))||String(a.nickname||'').localeCompare(String(b.nickname||'')))[0]||null;const most=players.slice().sort((a,b)=>(Number(b.battles_played||0)-Number(a.battles_played||0))||(Number(b.correct_count||0)-Number(a.correct_count||0))||String(a.nickname||'').localeCompare(String(b.nickname||'')))[0]||null;return {rankings:msg.rankings||players.map((p,i)=>({...p,rank:i+1})),team_rankings:msg.team_rankings||[],logs:msg.student_logs||msg.logs||[],player_stats:players.map(p=>({nickname:p.nickname,team:p.team,score:p.score,correct_count:p.correct_count,answer_count:p.answer_count,battles_played:p.battles_played,color:p.color})),best_correct:best?{nickname:best.nickname,correct_count:best.correct_count}:null,most_battles:most?{nickname:most.nickname,battles_played:most.battles_played}:null,winner_team:(msg.team_rankings&&msg.team_rankings[0])||null};}
 function openTeacherCeremony(){
-  window.open('/teacher/ceremony','remap_teacher_ceremony','width=1280,height=900,noopener,noreferrer');
+  window.open(teacherApi('/teacher/ceremony'),'remap_teacher_ceremony','width=1280,height=900,noopener,noreferrer');
 }
 const ceremonyBtnEl=document.getElementById('ceremonyBtn');
 if(ceremonyBtnEl){ceremonyBtnEl.onclick=openTeacherCeremony;}
