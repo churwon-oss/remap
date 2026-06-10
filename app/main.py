@@ -2741,6 +2741,15 @@ button.soft{
   #endScreen .podiumBase,#endScreen .rank1 .podiumBase,#endScreen .rank2 .podiumBase,#endScreen .rank3 .podiumBase{grid-area:base!important;justify-self:end!important;width:46px!important;height:46px!important;min-height:0!important;margin:0!important;border-radius:13px!important;font-size:26px!important;}
 }
 
+
+/* ===== v3.28 desktop ceremony podium order =====
+   PC: 2nd - 1st - 3rd visual podium. Mobile rules below/above keep 1st - 2nd - 3rd. */
+@media (min-width:881px) and (pointer:fine){
+  #endScreen .podiumStage .podiumSpot.rank2{order:1!important;}
+  #endScreen .podiumStage .podiumSpot.rank1{order:2!important;}
+  #endScreen .podiumStage .podiumSpot.rank3{order:3!important;}
+}
+
 /* Make student question choices look like printed exam numbers. */
 #prepScreen .choiceBadge{font-size:17px!important;font-weight:1000!important;color:#0f355d!important;background:linear-gradient(180deg,#e0fbff,#c8f4ff)!important;border:1px solid rgba(34,211,238,.38)!important;}
 
@@ -3331,7 +3340,7 @@ function showEndScreen(payload){
   endScreen.style.display='block';document.body.classList.add('show-top-leave');
   const byRank={};
   rankings.slice(0,3).forEach(r=>{byRank[Number(r.rank)]=r});
-  const podiumHtml=rankings.length?`<h3 class="awardSectionTitle">개인 시상대</h3><div class="podiumStage">${podiumSlot(byRank[1],1)}${podiumSlot(byRank[2],2)}${podiumSlot(byRank[3],3)}</div>`:`<h3 class="awardSectionTitle">개인 시상대</h3><div class="emptyPodium">아직 결과가 없습니다.</div>`;
+  const podiumHtml=rankings.length?`<h3 class="awardSectionTitle">개인 시상대</h3><div class="podiumStage">${podiumSlot(byRank[2],2)}${podiumSlot(byRank[1],1)}${podiumSlot(byRank[3],3)}</div>`:`<h3 class="awardSectionTitle">개인 시상대</h3><div class="emptyPodium">아직 결과가 없습니다.</div>`;
   const fullList=playerStats.map((p,idx)=>`<div class="rankItem"><span>${idx+1}. ${escapeHtml(p.nickname)}${p.team?` <span class="mini">(${escapeHtml(p.team)})</span>`:''}<br><span class="mini">정답 ${p.correct_count}/${p.answer_count} · 배틀 ${p.battles_played}회</span></span><strong>${Number(p.score||0)}점</strong></div>`).join('')||'<div class="mini">참가자 기록이 없습니다.</div>';
   document.getElementById('finalRanks').innerHTML=podiumHtml+`<h3 class="awardSectionTitle" style="margin-top:16px">전체 개인 순위</h3><div class="fullRankList">${fullList}</div>`;
   const winnerColor=(byRank[1]&&byRank[1].color)||'#60a5fa';
