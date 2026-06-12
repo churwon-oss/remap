@@ -4,6 +4,7 @@ import asyncio
 import contextvars
 import json
 import math
+import os
 from io import BytesIO
 from pathlib import Path
 import random
@@ -12,6 +13,8 @@ import socket
 import string
 import time
 import uuid
+import urllib.error
+import urllib.request
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -259,6 +262,8 @@ def make_room_state() -> dict[str, Any]:
         'logs': [],
         'team_scores': {t: 0 for t in TEAM_ORDER},
         'last_move_broadcast_at': 0.0,
+        'ai_reviews': {},
+        'ai_review_meta': {},
     }
 
 
@@ -373,6 +378,8 @@ def reset_runtime(keep_room: bool = True) -> None:
     state['countdown_end_at'] = None
     state['team_scores'] = {t: 0 for t in TEAM_ORDER}
     state['last_move_broadcast_at'] = 0.0
+    state['ai_reviews'] = {}
+    state['ai_review_meta'] = {}
     state['logs'] = []
 
 
@@ -486,6 +493,8 @@ def full_payload() -> dict[str, Any]:
         'map_walls': get_map_walls(),
         'logs': state['logs'][-30:],
         'student_logs': student_logs(30),
+        'ai_reviews': list(state.get('ai_reviews', {}).values()),
+        'ai_review_meta': state.get('ai_review_meta', {}),
     }
 
 
@@ -1098,6 +1107,168 @@ async def teacher_reset_game(room: str = '') -> JSONResponse:
 
 
 
+AI_REVIEW_STATUSES = {'통과', '확인 필요', '오류 가능성', '표현 모호', '검토 불가'}
+MAX_AI_REVIEW_QUESTIONS = 80
+
+
+def collect_question_review_items() -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    players = sorted(state['players'].values(), key=lambda p: (p.team if p.team else 'Z', p.nickname.lower()))
+    for player in players:
+        for idx, q in enumerate(player.questions, start=1):
+            answer_text = q.choices[q.answer] if 0 <= q.answer < len(q.choices) else ''
+            items.append({
+                'key': f'{player.id}:{idx}',
+                'player_id': player.id,
+                'nickname': player.nickname,
+                'team': player.team,
+                'question_no': idx,
+                'question': q.text,
+                'choices': list(q.choices),
+                'selected_answer_number': int(q.answer) + 1,
+                'selected_answer': answer_text,
+            })
+    return items
+
+
+def sanitize_ai_review_item(raw: dict[str, Any], item_by_key: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+    key = str(raw.get('key') or '').strip()
+    base = item_by_key.get(key)
+    if not base:
+        return None
+    status = str(raw.get('status') or '검토 불가').strip()
+    if status not in AI_REVIEW_STATUSES:
+        status = '검토 불가'
+    summary = clean_text(raw.get('summary'), 220) or 'AI 검토 의견 없음'
+    suggested_answer = clean_text(raw.get('suggested_answer'), 120)
+    confidence = str(raw.get('confidence') or '').strip()
+    if confidence not in {'높음', '보통', '낮음'}:
+        confidence = '보통'
+    return {
+        **base,
+        'status': status,
+        'summary': summary,
+        'suggested_answer': suggested_answer,
+        'confidence': confidence,
+    }
+
+
+def parse_json_from_text(text: str) -> dict[str, Any]:
+    text = str(text or '').strip()
+    if not text:
+        raise ValueError('empty response')
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    match = re.search(r'```(?:json)?\s*(\{[\s\S]*?\})\s*```', text, re.IGNORECASE)
+    if match:
+        return json.loads(match.group(1))
+    first = text.find('{')
+    last = text.rfind('}')
+    if first >= 0 and last > first:
+        return json.loads(text[first:last+1])
+    raise ValueError('json not found')
+
+
+def call_gemini_review(items: list[dict[str, Any]]) -> dict[str, Any]:
+    api_key = os.environ.get('GEMINI_API_KEY', '').strip()
+    if not api_key:
+        return {
+            'ok': False,
+            'message': 'GEMINI_API_KEY가 설정되어 있지 않습니다. Render Environment 또는 실행 환경 변수에 Gemini API 키를 넣으면 AI 검토를 사용할 수 있습니다.',
+            'items': [],
+        }
+    model = os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash').strip() or 'gemini-1.5-flash'
+    payload_items = []
+    for item in items[:MAX_AI_REVIEW_QUESTIONS]:
+        payload_items.append({
+            'key': item['key'],
+            'question': item['question'],
+            'choices': item['choices'],
+            'selected_answer_number': item['selected_answer_number'],
+            'selected_answer': item['selected_answer'],
+        })
+    prompt = (
+        '너는 교사가 학생들이 만든 객관식 복습 문제를 빠르게 점검할 수 있도록 돕는 보조 검토자다. '\
+        '학생 개인정보를 추론하지 말고, 제공된 문제와 선택지만 보고 판단한다. '\
+        '교과 맥락이 부족하여 단정하기 어려우면 오류라고 단정하지 말고 "확인 필요" 또는 "표현 모호"로 분류한다. '\
+        '정답이 명확히 틀린 경우에만 "오류 가능성"으로 분류한다. '\
+        '출력은 반드시 JSON 객체 하나만 사용한다. 설명 문장은 JSON 밖에 쓰지 않는다.\n\n'
+        '상태값은 다음 중 하나만 사용한다: 통과, 확인 필요, 오류 가능성, 표현 모호, 검토 불가.\n'
+        'confidence는 다음 중 하나만 사용한다: 높음, 보통, 낮음.\n'
+        'JSON 형식:\n'
+        '{"items":[{"key":"문제키","status":"통과|확인 필요|오류 가능성|표현 모호|검토 불가","summary":"짧은 검토 의견","suggested_answer":"필요하면 추천 정답, 없으면 빈 문자열","confidence":"높음|보통|낮음"}]}\n\n'
+        f'검토할 문제 목록:\n{json.dumps(payload_items, ensure_ascii=False)}'
+    )
+    body = {
+        'contents': [{'parts': [{'text': prompt}]}],
+        'generationConfig': {'temperature': 0.1, 'response_mime_type': 'application/json'},
+    }
+    data = json.dumps(body, ensure_ascii=False).encode('utf-8')
+    url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}'
+    req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'}, method='POST')
+    try:
+        with urllib.request.urlopen(req, timeout=70) as resp:
+            raw = resp.read().decode('utf-8', errors='replace')
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode('utf-8', errors='replace')[:500]
+        return {'ok': False, 'message': f'AI 검토 API 오류: HTTP {e.code} {detail}', 'items': []}
+    except Exception as e:
+        return {'ok': False, 'message': f'AI 검토 연결 오류: {e}', 'items': []}
+    try:
+        parsed = json.loads(raw)
+        text = parsed.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+        result = parse_json_from_text(text)
+    except Exception as e:
+        return {'ok': False, 'message': f'AI 응답을 해석하지 못했습니다: {e}', 'items': []}
+    return {'ok': True, 'message': 'AI 문제 검토 완료', 'items': result.get('items', []) if isinstance(result, dict) else []}
+
+
+@app.post('/api/teacher/ai_review')
+async def teacher_ai_review(room: str = '') -> JSONResponse:
+    token = bind_room(room)
+    if token is None:
+        return JSONResponse({'ok': False, 'message': '관리할 방을 찾을 수 없습니다.', 'items': []}, status_code=404)
+    try:
+        items = collect_question_review_items()
+        if not items:
+            return JSONResponse({'ok': False, 'message': '아직 제출된 학생 문제가 없습니다.', 'items': []}, status_code=400)
+        if len(items) > MAX_AI_REVIEW_QUESTIONS:
+            items = items[:MAX_AI_REVIEW_QUESTIONS]
+        item_by_key = {item['key']: item for item in items}
+        api_result = await asyncio.to_thread(call_gemini_review, items)
+        if not api_result.get('ok'):
+            return JSONResponse(api_result, status_code=400)
+        reviews: dict[str, dict[str, Any]] = {}
+        for raw in api_result.get('items') or []:
+            if isinstance(raw, dict):
+                cleaned = sanitize_ai_review_item(raw, item_by_key)
+                if cleaned:
+                    reviews[cleaned['key']] = cleaned
+        # AI가 누락한 문제는 검토 불가로 채워 엑셀/화면에서 빠지지 않도록 한다.
+        for key, base in item_by_key.items():
+            if key not in reviews:
+                reviews[key] = {
+                    **base,
+                    'status': '검토 불가',
+                    'summary': 'AI 응답에서 이 문제가 누락되었습니다.',
+                    'suggested_answer': '',
+                    'confidence': '낮음',
+                }
+        state['ai_reviews'] = reviews
+        state['ai_review_meta'] = {
+            'reviewed_at': time.strftime('%H:%M:%S'),
+            'count': len(reviews),
+            'model': os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash').strip() or 'gemini-1.5-flash',
+        }
+        log(f"AI 문제 검토 완료: {len(reviews)}문항", 'system')
+        await broadcast_state()
+        return JSONResponse({'ok': True, 'message': 'AI 문제 검토 완료', 'items': list(reviews.values()), 'meta': state['ai_review_meta']})
+    finally:
+        unbind_room(token)
+
+
 
 def build_questions_workbook_bytes() -> bytes:
     wb = Workbook()
@@ -1107,7 +1278,7 @@ def build_questions_workbook_bytes() -> bytes:
     title = state['settings'].get('room_title') or 'REMAP 방제목'
     mode = '팀전' if state['settings'].get('game_mode') == 'team' else '개인전'
 
-    ws.merge_cells('A1:I1')
+    ws.merge_cells('A1:L1')
     ws['A1'] = f"{title} - 학생 문제/정답 정리"
     ws['A2'] = '게임 모드'
     ws['B2'] = mode
@@ -1116,7 +1287,7 @@ def build_questions_workbook_bytes() -> bytes:
     ws['G2'] = '배틀 문제 수'
     ws['H2'] = state['settings'].get('question_count') or 0
 
-    headers = ['닉네임', '팀', '문제 번호', '문제', '선지 1', '선지 2', '선지 3', '선지 4', '정답']
+    headers = ['닉네임', '팀', '문제 번호', '문제', '선지 1', '선지 2', '선지 3', '선지 4', '정답', 'AI 검토', 'AI 의견', 'AI 추천답']
     header_row = 4
     for col, value in enumerate(headers, start=1):
         cell = ws.cell(row=header_row, column=col, value=value)
@@ -1135,6 +1306,7 @@ def build_questions_workbook_bytes() -> bytes:
     for player in players:
         team_label = f"{player.team}팀" if player.team else '-'
         for idx, q in enumerate(player.questions, start=1):
+            review = state.get('ai_reviews', {}).get(f'{player.id}:{idx}', {})
             values = [
                 player.nickname,
                 team_label,
@@ -1145,11 +1317,14 @@ def build_questions_workbook_bytes() -> bytes:
                 q.choices[2] if len(q.choices) > 2 else '',
                 q.choices[3] if len(q.choices) > 3 else '',
                 q.choices[q.answer] if 0 <= q.answer < len(q.choices) else '',
+                review.get('status', ''),
+                review.get('summary', ''),
+                review.get('suggested_answer', ''),
             ]
             for col, value in enumerate(values, start=1):
                 cell = ws.cell(row=row, column=col, value=value)
                 cell.border = border
-                cell.alignment = Alignment(vertical='top', wrap_text=True, horizontal='center' if col in (2,3) else 'left')
+                cell.alignment = Alignment(vertical='top', wrap_text=True, horizontal='center' if col in (2,3,10) else 'left')
             row += 1
 
     if row == header_row + 1:
@@ -1159,7 +1334,7 @@ def build_questions_workbook_bytes() -> bytes:
     ws['A1'].font = Font(size=15, bold=True, color='173B7A')
     ws['A1'].alignment = Alignment(horizontal='center')
 
-    widths = {'A': 14, 'B': 10, 'C': 10, 'D': 38, 'E': 22, 'F': 22, 'G': 22, 'H': 22, 'I': 22}
+    widths = {'A': 14, 'B': 10, 'C': 10, 'D': 38, 'E': 22, 'F': 22, 'G': 22, 'H': 22, 'I': 22, 'J': 14, 'K': 44, 'L': 22}
     for col, width in widths.items():
         ws.column_dimensions[col].width = width
     ws.freeze_panes = 'A5'
@@ -1394,6 +1569,12 @@ TEACHER_CEREMONY_HTML = """
     padding-right:4px;
   }
 }
+
+.aiReviewPanel{border-color:rgba(34,211,238,.30)!important;background:linear-gradient(180deg,rgba(14,165,233,.11),rgba(255,255,255,.052))!important}
+.aiReviewActions{display:flex;gap:8px;align-items:center;margin:8px 0 10px}.aiReviewActions button{width:100%;min-height:40px;padding:8px 10px;font-size:14px}.aiReviewBox{display:grid;gap:8px;max-height:220px;overflow:auto;padding-right:3px}.aiReviewSummary{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}.aiPill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:1000;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08)}.aiPill.ok{color:#dcfce7;background:rgba(22,163,74,.20)}.aiPill.warn{color:#fef3c7;background:rgba(245,158,11,.22)}.aiPill.bad{color:#fee2e2;background:rgba(239,68,68,.20)}.aiReviewItem{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.065);border-radius:13px;padding:8px}.aiReviewItem b{display:block;color:#0f2544;font-size:13px;margin-bottom:4px}.aiReviewItem .mini{font-size:11px}.aiStatus{display:inline-block;border-radius:999px;padding:3px 7px;margin-right:5px;font-size:11px;font-weight:1000}.aiStatus.ok{background:rgba(34,197,94,.20);color:#dcfce7}.aiStatus.warn{background:rgba(245,158,11,.20);color:#fef3c7}.aiStatus.bad{background:rgba(239,68,68,.22);color:#fee2e2}.aiStatus.muted{background:rgba(148,163,184,.18);color:#e2e8f0}
+#aiReviewBtn{background:linear-gradient(135deg,#22c55e,#0891b2 60%,#2563eb)!important;color:#fff!important;box-shadow:0 12px 24px rgba(14,165,233,.20)!important}
+@media(max-width:1180px){.aiReviewBox{max-height:180px}.aiReviewActions{margin-top:6px}}
+
 </style>
 </head>
 <body>
@@ -3020,6 +3201,12 @@ button.soft{
 /* ===== v3.27 multi-teacher room owner layout ===== */
 .teacherRoomMetaRow{display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(180px,.6fr)!important;gap:10px!important;}
 @media(max-width:640px){.teacherRoomMetaRow{grid-template-columns:1fr!important;}}
+
+.aiReviewPanel{border-color:rgba(34,211,238,.30)!important;background:linear-gradient(180deg,rgba(14,165,233,.11),rgba(255,255,255,.052))!important}
+.aiReviewActions{display:flex;gap:8px;align-items:center;margin:8px 0 10px}.aiReviewActions button{width:100%;min-height:40px;padding:8px 10px;font-size:14px}.aiReviewBox{display:grid;gap:8px;max-height:220px;overflow:auto;padding-right:3px}.aiReviewSummary{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}.aiPill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:1000;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08)}.aiPill.ok{color:#dcfce7;background:rgba(22,163,74,.20)}.aiPill.warn{color:#fef3c7;background:rgba(245,158,11,.22)}.aiPill.bad{color:#fee2e2;background:rgba(239,68,68,.20)}.aiReviewItem{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.065);border-radius:13px;padding:8px}.aiReviewItem b{display:block;color:#0f2544;font-size:13px;margin-bottom:4px}.aiReviewItem .mini{font-size:11px}.aiStatus{display:inline-block;border-radius:999px;padding:3px 7px;margin-right:5px;font-size:11px;font-weight:1000}.aiStatus.ok{background:rgba(34,197,94,.20);color:#dcfce7}.aiStatus.warn{background:rgba(245,158,11,.20);color:#fef3c7}.aiStatus.bad{background:rgba(239,68,68,.22);color:#fee2e2}.aiStatus.muted{background:rgba(148,163,184,.18);color:#e2e8f0}
+#aiReviewBtn{background:linear-gradient(135deg,#22c55e,#0891b2 60%,#2563eb)!important;color:#fff!important;box-shadow:0 12px 24px rgba(14,165,233,.20)!important}
+@media(max-width:1180px){.aiReviewBox{max-height:180px}.aiReviewActions{margin-top:6px}}
+
 </style>
 </head>
 <body>
@@ -3901,7 +4088,8 @@ button.soft{
   .summaryPanel .opButtons #ceremonyBtn{order:3!important;}
   .summaryPanel .opButtons #resetBtn{order:4!important;}
   .summaryPanel .opButtons #exportQuestionsBtn{order:5!important;}
-  .summaryPanel .opButtons #newRoomBtn{order:6!important;}
+  .summaryPanel .opButtons #aiReviewBtn{order:6!important;}
+  .summaryPanel .opButtons #newRoomBtn{order:7!important;}
 }
 @media (max-width: 380px){
   .topbar{grid-template-columns:auto minmax(58px,1fr) auto!important;gap:6px!important;padding:0 8px!important;}
@@ -4107,6 +4295,12 @@ button.soft{
     padding-right:4px;
   }
 }
+
+.aiReviewPanel{border-color:rgba(34,211,238,.30)!important;background:linear-gradient(180deg,rgba(14,165,233,.11),rgba(255,255,255,.052))!important}
+.aiReviewActions{display:flex;gap:8px;align-items:center;margin:8px 0 10px}.aiReviewActions button{width:100%;min-height:40px;padding:8px 10px;font-size:14px}.aiReviewBox{display:grid;gap:8px;max-height:220px;overflow:auto;padding-right:3px}.aiReviewSummary{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}.aiPill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:1000;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08)}.aiPill.ok{color:#dcfce7;background:rgba(22,163,74,.20)}.aiPill.warn{color:#fef3c7;background:rgba(245,158,11,.22)}.aiPill.bad{color:#fee2e2;background:rgba(239,68,68,.20)}.aiReviewItem{border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.065);border-radius:13px;padding:8px}.aiReviewItem b{display:block;color:#0f2544;font-size:13px;margin-bottom:4px}.aiReviewItem .mini{font-size:11px}.aiStatus{display:inline-block;border-radius:999px;padding:3px 7px;margin-right:5px;font-size:11px;font-weight:1000}.aiStatus.ok{background:rgba(34,197,94,.20);color:#dcfce7}.aiStatus.warn{background:rgba(245,158,11,.20);color:#fef3c7}.aiStatus.bad{background:rgba(239,68,68,.22);color:#fee2e2}.aiStatus.muted{background:rgba(148,163,184,.18);color:#e2e8f0}
+#aiReviewBtn{background:linear-gradient(135deg,#22c55e,#0891b2 60%,#2563eb)!important;color:#fff!important;box-shadow:0 12px 24px rgba(14,165,233,.20)!important}
+@media(max-width:1180px){.aiReviewBox{max-height:180px}.aiReviewActions{margin-top:6px}}
+
 </style>
 </head>
 <body>
@@ -4144,7 +4338,7 @@ button.soft{
 <section id='operateScreen'>
   <div class='opHeader'>
     <div class='panel codeBox'><div class='codeTextBlock'><div class='mini'>학생 입장 코드</div><div id='codeValue' class='codeValue'>----</div><div id='studentJoinUrl' class='joinUrl'>학생 접속 주소 준비 중</div></div><div class='qrPanel'><img id='joinQr' class='joinQr' alt='학생 입장 QR 코드'><div class='qrCaption'>스마트폰 카메라로 스캔</div></div></div>
-    <div class='panel summaryPanel'><div class='headerMeta'><div class='miniCard primary'><span class='mini'>상태</span><strong id='stateValue'>준비 중</strong></div><div class='miniCard compact'><span class='mini'>참가자</span><strong id='playerCountValue'>0명</strong></div><div class='miniCard primary'><span class='mini'>남은 시간</span><strong id='remainValue'>5:00</strong></div><div class='miniCard compact'><span class='mini'>팀별 인원</span><strong id='teamCountValue'>-</strong></div><div class='miniCard compact'><span class='mini'>미제출</span><strong id='unsubmittedValue'>0명</strong></div></div><div class='opButtons' id='opButtons'><button id='startBtn'>게임 시작</button><button id='endBtn' class='danger'>게임 종료</button><button id='ceremonyBtn' class='ceremonyBtn' type='button'>시상식 보기</button><button id='resetBtn' class='ghost'>다음 게임 준비</button><button id='exportQuestionsBtn' class='soft'>문제 엑셀 다운로드</button><button id='newRoomBtn' class='soft'>새 방 설정</button></div></div>
+    <div class='panel summaryPanel'><div class='headerMeta'><div class='miniCard primary'><span class='mini'>상태</span><strong id='stateValue'>준비 중</strong></div><div class='miniCard compact'><span class='mini'>참가자</span><strong id='playerCountValue'>0명</strong></div><div class='miniCard primary'><span class='mini'>남은 시간</span><strong id='remainValue'>5:00</strong></div><div class='miniCard compact'><span class='mini'>팀별 인원</span><strong id='teamCountValue'>-</strong></div><div class='miniCard compact'><span class='mini'>미제출</span><strong id='unsubmittedValue'>0명</strong></div></div><div class='opButtons' id='opButtons'><button id='startBtn'>게임 시작</button><button id='endBtn' class='danger'>게임 종료</button><button id='ceremonyBtn' class='ceremonyBtn' type='button'>시상식 보기</button><button id='resetBtn' class='ghost'>다음 게임 준비</button><button id='exportQuestionsBtn' class='soft'>문제 엑셀 다운로드</button><button id='aiReviewBtn' class='soft' type='button'>AI 문제 검토</button><button id='newRoomBtn' class='soft'>새 방 설정</button></div></div>
   </div>
   <div class='opMain'>
     <div class='col leftCol'>
@@ -4161,7 +4355,7 @@ button.soft{
       <div class='panel'><h3 class='sectionTitle'>개인 순위</h3><div id='rankingBox'></div></div>
       <div class='panel'><h3 class='sectionTitle'>팀 순위</h3><div id='teamRankingBox'></div></div>
       <div class='panel'><h3 class='sectionTitle'>배틀 진행률</h3><div id='battleBox'></div></div>
-      <div class='panel'><h3 class='sectionTitle'>로그</h3><div id='logBox'></div></div>
+      <div class='panel aiReviewPanel'><h3 class='sectionTitle'>AI 문제 검토</h3><div class='mini'>학생 흐름은 막지 않고, 교사용 참고 의견만 표시합니다.</div><div id='aiReviewBox' class='aiReviewBox'><div class='mini'>[AI 문제 검토] 버튼을 누르면 학생 제출 문제를 검토합니다.</div></div></div><div class='panel'><h3 class='sectionTitle'>로그</h3><div id='logBox'></div></div>
     </div>
   </div>
 </section>
@@ -4178,7 +4372,7 @@ button.soft{
 <script>
 let bgDataUrl=null,currentState=null,editingRoom=false,lastGameEndPayload=null;
 const createScreen=document.getElementById('createScreen'),operateScreen=document.getElementById('operateScreen');
-const statusBar=document.getElementById('statusBar'),roomTitleBar=document.getElementById('roomTitleBar'),roomBox=document.getElementById('roomBox'),participantBox=document.getElementById('participantBox'),rankingBox=document.getElementById('rankingBox'),teamRankingBox=document.getElementById('teamRankingBox'),battleBox=document.getElementById('battleBox'),logBox=document.getElementById('logBox');
+const statusBar=document.getElementById('statusBar'),roomTitleBar=document.getElementById('roomTitleBar'),roomBox=document.getElementById('roomBox'),participantBox=document.getElementById('participantBox'),rankingBox=document.getElementById('rankingBox'),teamRankingBox=document.getElementById('teamRankingBox'),battleBox=document.getElementById('battleBox'),logBox=document.getElementById('logBox'),aiReviewBox=document.getElementById('aiReviewBox');
 const canvas=document.getElementById('teacherCanvas'),ctx=canvas.getContext('2d');let bgImage=null;
 const teacherMapZoomOutBtn=document.getElementById('teacherMapZoomOutBtn'), teacherMapZoomInBtn=document.getElementById('teacherMapZoomInBtn'), teacherMapZoomValue=document.getElementById('teacherMapZoomValue');
 let teacherMapScale=(window.matchMedia && window.matchMedia('(max-width: 820px) and (orientation: landscape) and (pointer: coarse)').matches)?0.75:1;
@@ -4255,6 +4449,18 @@ function applyStatusStyle(status){statusBar.classList.remove('status-running','s
 function updateCeremonyButton(status){const btn=document.getElementById('ceremonyBtn');const box=document.getElementById('opButtons');const show=status==='finished';if(btn){btn.classList.toggle('show',show);}if(box){box.classList.toggle('hasCeremony',show);}}
 function showCreate(){editingRoom=true;createScreen.style.display='flex';operateScreen.style.display='none';roomTitleBar.textContent='REMAP';statusBar.textContent='[현재상황: 설정 중]';applyStatusStyle('idle');updateCeremonyButton('idle')}
 function showOperate(){editingRoom=false;createScreen.style.display='none';operateScreen.style.display='grid'}
+
+function aiStatusClass(status){if(status==='통과')return 'ok';if(status==='오류 가능성')return 'bad';if(status==='확인 필요'||status==='표현 모호')return 'warn';return 'muted';}
+function renderAiReviews(items,meta){
+  if(!aiReviewBox)return;
+  items=Array.isArray(items)?items:[];
+  if(!items.length){aiReviewBox.innerHTML='<div class="mini">[AI 문제 검토] 버튼을 누르면 학생 제출 문제를 검토합니다.</div>';return;}
+  const counts={};items.forEach(it=>{counts[it.status||'검토 불가']=(counts[it.status||'검토 불가']||0)+1;});
+  const pillHtml=['통과','확인 필요','오류 가능성','표현 모호','검토 불가'].filter(k=>counts[k]).map(k=>`<span class="aiPill ${aiStatusClass(k)}">${escapeHtml(k)} ${counts[k]}</span>`).join('');
+  const reviewedAt=meta&&meta.reviewed_at?`<div class="mini">검토 시각: ${escapeHtml(meta.reviewed_at)} · AI는 참고 의견이며 최종 판단은 교사가 확인합니다.</div>`:'<div class="mini">AI는 참고 의견이며 최종 판단은 교사가 확인합니다.</div>';
+  const rows=items.slice().sort((a,b)=>String(a.nickname||'').localeCompare(String(b.nickname||''))||Number(a.question_no||0)-Number(b.question_no||0)).map(it=>`<div class="aiReviewItem"><b>${escapeHtml(it.nickname||'-')} ${Number(it.question_no||0)}번 <span class="aiStatus ${aiStatusClass(it.status)}">${escapeHtml(it.status||'검토 불가')}</span></b><div class="mini">${escapeHtml(it.summary||'')}</div>${it.suggested_answer?`<div class="mini">추천/확인 답: ${escapeHtml(it.suggested_answer)}</div>`:''}</div>`).join('');
+  aiReviewBox.innerHTML=`<div class="aiReviewSummary">${pillHtml}</div>${reviewedAt}${rows}`;
+}
 function updateScreen(msg){const hasRoom=!!(msg.room&&msg.room.code);if(!hasRoom){createScreen.style.display='flex';operateScreen.style.display='none';roomTitleBar.textContent='REMAP';statusBar.textContent='[현재상황: 설정 전]';applyStatusStyle('idle');updateCeremonyButton('idle');return;}if(editingRoom&&!teacherRoomCode){return;}showOperate();}
 document.getElementById('bgFile').onchange=(e)=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{bgDataUrl=reader.result;};reader.readAsDataURL(file);};
 document.getElementById('clearBgPreBtn').onclick=()=>{bgDataUrl=null;document.getElementById('bgFile').value='';};
@@ -4299,6 +4505,7 @@ function connectTeacherSocket(){
   teamRankingBox.innerHTML=teamMode?(teamRankings.length?teamRankings.map(r=>`<div class='item'><span>${Number(r.rank)||'-'}. ${escapeHtml(r.team)}팀</span><strong>${Number(r.score||0)}</strong></div>`).join(''):'<div class="mini">팀 순위 없음</div>'):'<div class="mini">개인전 모드</div>';
   battleBox.innerHTML=battles.length?battles.map(b=>`<div class='item'><span>${(b.players||[]).map(escapeHtml).join(' vs ')}</span><strong>${Number(b.progress||0)}/${Number(b.total||0)}</strong></div>`).join(''):'<div class="mini">진행 중인 배틀 없음</div>';
   logBox.innerHTML=logs.length?logs.slice().reverse().map(l=>`<div class='item'><span>${escapeHtml(l.time)}</span><span>${escapeHtml(l.message)}</span></div>`).join(''):'<div class="mini">로그 없음</div>';
+  renderAiReviews(msg.ai_reviews||[], msg.ai_review_meta||{});
   ids.forEach(id=>{const el=document.getElementById(id);if(el&&settings[id]!==undefined&&!editingRoom)el.value=settings[id];});
   syncModeUI();
   syncMapUI();
@@ -4313,6 +4520,7 @@ document.getElementById('startBtn').onclick=()=>fetch(teacherApi('/api/teacher/s
 document.getElementById('endBtn').onclick=()=>fetch(teacherApi('/api/teacher/end'),{method:'POST'});
 document.getElementById('resetBtn').onclick=()=>fetch(teacherApi('/api/teacher/reset'),{method:'POST'});
 document.getElementById('exportQuestionsBtn').onclick=()=>{window.location.href=teacherApi('/api/teacher/export_questions.xlsx');};
+document.getElementById('aiReviewBtn').onclick=async()=>{const btn=document.getElementById('aiReviewBtn');btn.disabled=true;const old=btn.textContent;btn.textContent='AI 검토 중...';if(aiReviewBox){aiReviewBox.innerHTML='<div class="mini">AI가 학생 문제를 검토하는 중입니다. 무료 API 환경에서는 잠시 걸릴 수 있습니다.</div>';}try{const res=await fetch(teacherApi('/api/teacher/ai_review'),{method:'POST'});const data=await res.json().catch(()=>({ok:false,message:'응답 해석 실패',items:[]}));if(data.ok){renderAiReviews(data.items||[],data.meta||{});}else if(aiReviewBox){aiReviewBox.innerHTML=`<div class="mini">${escapeHtml(data.message||'AI 검토를 실행하지 못했습니다.')}</div>`;}}catch(e){if(aiReviewBox){aiReviewBox.innerHTML=`<div class="mini">AI 검토 연결 오류: ${escapeHtml(e.message||e)}</div>`;}}finally{btn.disabled=false;btn.textContent=old;}};
 document.getElementById('newRoomBtn').onclick=async()=>{const btn=document.getElementById('newRoomBtn');btn.disabled=true;try{if(currentState&&['countdown','running'].includes(currentState.game_status)){await fetch(teacherApi('/api/teacher/end'),{method:'POST'});}else{await fetch(teacherApi('/api/teacher/new_room_setup'),{method:'POST'});}}catch(e){console.error(e);}finally{setTeacherRoomCode('');connectTeacherSocket();btn.disabled=false;showCreate();}};
 document.getElementById('clearBgLiveBtn').onclick=()=>fetch(teacherApi('/api/teacher/clear_background'),{method:'POST'});
 
