@@ -1131,6 +1131,28 @@ def collect_question_review_items() -> list[dict[str, Any]]:
     return items
 
 
+def answer_candidate_numbers(text: Any) -> set[int]:
+    raw = str(text or '')
+    found: set[int] = set()
+    circled = {'①': 1, '②': 2, '③': 3, '④': 4, '➀': 1, '➁': 2, '➂': 3, '➃': 4}
+    for ch, num in circled.items():
+        if ch in raw:
+            found.add(num)
+    for m in re.finditer(r'(?<!\d)([1-4])\s*(?:번|[.)]|$)', raw):
+        found.add(int(m.group(1)))
+    return found
+
+
+def needs_external_fact_check(question: Any) -> bool:
+    q = str(question or '')
+    external_terms = [
+        '위치', '지역구', '주소', '소재', '소재지', '어디', '현재', '최근', '올해', '작년', '내년',
+        '학교', '기관', '회사', '업체', '교장', '교감', '대통령', '총리', '시장', '교육감',
+        '날짜', '시간', '가격', '요금', '전화', '홈페이지', '인구', '순위', '랭킹'
+    ]
+    return any(term in q for term in external_terms)
+
+
 def sanitize_ai_review_item(raw: dict[str, Any], item_by_key: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
     key = str(raw.get('key') or '').strip()
     base = item_by_key.get(key)
@@ -1144,6 +1166,23 @@ def sanitize_ai_review_item(raw: dict[str, Any], item_by_key: dict[str, dict[str
     confidence = str(raw.get('confidence') or '').strip()
     if confidence not in {'높음', '보통', '낮음'}:
         confidence = '보통'
+
+    # 보수적 후처리: AI가 여러 선택지를 동시에 정답처럼 제시하면 최종 판정하지 않는다.
+    candidates = answer_candidate_numbers(suggested_answer)
+    if len(candidates) >= 2:
+        status = '표현 모호'
+        confidence = '낮음'
+        summary = 'AI가 여러 선택지를 정답 후보로 판단했습니다. 문제 표현 또는 선택지 구성을 교사가 확인해야 합니다.'
+        suggested_answer = '교사 확인 필요'
+
+    # 외부 사실 확인형 문항은 AI가 맞다/틀리다를 단정하지 않도록 낮춘다.
+    # 예: 학교 위치, 지역구, 최신 정보, 기관/인물/날짜/가격 등
+    if needs_external_fact_check(base.get('question')) and status in {'통과', '오류 가능성'}:
+        status = '확인 필요'
+        confidence = '낮음'
+        summary = '학교 위치, 지역구, 주소, 현재 정보처럼 외부 사실 확인이 필요한 문항입니다. AI 단독 판단보다 교사 확인이 필요합니다.'
+        suggested_answer = '교사 확인 필요'
+
     return {
         **base,
         'status': status,
@@ -1179,7 +1218,7 @@ def call_gemini_review(items: list[dict[str, Any]]) -> dict[str, Any]:
             'message': 'GEMINI_API_KEY가 설정되어 있지 않습니다. Render Environment 또는 실행 환경 변수에 Gemini API 키를 넣으면 AI 검토를 사용할 수 있습니다.',
             'items': [],
         }
-    model = os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash').strip() or 'gemini-1.5-flash'
+    model = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash').strip() or 'gemini-2.5-flash'
     payload_items = []
     for item in items[:MAX_AI_REVIEW_QUESTIONS]:
         payload_items.append({
@@ -1190,15 +1229,20 @@ def call_gemini_review(items: list[dict[str, Any]]) -> dict[str, Any]:
             'selected_answer': item['selected_answer'],
         })
     prompt = (
-        '너는 교사가 학생들이 만든 객관식 복습 문제를 빠르게 점검할 수 있도록 돕는 보조 검토자다. '\
-        '학생 개인정보를 추론하지 말고, 제공된 문제와 선택지만 보고 판단한다. '\
-        '교과 맥락이 부족하여 단정하기 어려우면 오류라고 단정하지 말고 "확인 필요" 또는 "표현 모호"로 분류한다. '\
-        '정답이 명확히 틀린 경우에만 "오류 가능성"으로 분류한다. '\
+        '너는 교사용 참고 의견을 제공하는 보조 검토자다. 최종 정답 판정자가 아니다. '\
+        '학생 개인정보를 추론하지 말고, 제공된 문제와 선택지만 보고 매우 보수적으로 판단한다. '\
+        '학생이 고른 정답이 명확히 맞아 보일 때만 "통과"로 분류한다. '\
+        '학생이 고른 정답이 명확히 틀렸다고 확신할 때만 "오류 가능성"으로 분류한다. '\
+        '조금이라도 확실하지 않으면 "확인 필요" 또는 "검토 불가"로 분류한다. '\
+        '정답 후보는 최대 1개만 제시한다. 여러 선택지가 모두 맞을 수 있거나 둘 이상을 정답 후보로 보게 되면 "표현 모호"로 분류한다. '\
+        '학교 위치, 지역구, 주소, 현재 정보, 기관 정보, 인물, 날짜, 가격처럼 외부 사실 확인이나 최신 정보가 필요한 문항은 추측하지 말고 "검토 불가" 또는 "확인 필요"로 분류한다. '\
+        'AI의 내부 지식만으로 맞다/틀리다를 단정하지 않는다. '\
         '출력은 반드시 JSON 객체 하나만 사용한다. 설명 문장은 JSON 밖에 쓰지 않는다.\n\n'
         '상태값은 다음 중 하나만 사용한다: 통과, 확인 필요, 오류 가능성, 표현 모호, 검토 불가.\n'
-        'confidence는 다음 중 하나만 사용한다: 높음, 보통, 낮음.\n'
+        'confidence는 다음 중 하나만 사용한다: 높음, 보통, 낮음. 확신이 없으면 반드시 낮음으로 둔다.\n'
+        'summary는 교사가 참고할 수 있게 한 문장으로 짧게 쓴다. 최종 판정이 아니라 참고 의견임을 전제로 쓴다.\n'
         'JSON 형식:\n'
-        '{"items":[{"key":"문제키","status":"통과|확인 필요|오류 가능성|표현 모호|검토 불가","summary":"짧은 검토 의견","suggested_answer":"필요하면 추천 정답, 없으면 빈 문자열","confidence":"높음|보통|낮음"}]}\n\n'
+        '{"items":[{"key":"문제키","status":"통과|확인 필요|오류 가능성|표현 모호|검토 불가","summary":"짧은 검토 의견","suggested_answer":"추천 정답 1개 또는 교사 확인 필요 또는 빈 문자열","confidence":"높음|보통|낮음"}]}\n\n'
         f'검토할 문제 목록:\n{json.dumps(payload_items, ensure_ascii=False)}'
     )
     body = {
@@ -1260,7 +1304,7 @@ async def teacher_ai_review(room: str = '') -> JSONResponse:
         state['ai_review_meta'] = {
             'reviewed_at': time.strftime('%H:%M:%S'),
             'count': len(reviews),
-            'model': os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash').strip() or 'gemini-1.5-flash',
+            'model': os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash').strip() or 'gemini-2.5-flash',
         }
         log(f"AI 문제 검토 완료: {len(reviews)}문항", 'system')
         await broadcast_state()
@@ -4355,7 +4399,7 @@ button.soft{
       <div class='panel'><h3 class='sectionTitle'>개인 순위</h3><div id='rankingBox'></div></div>
       <div class='panel'><h3 class='sectionTitle'>팀 순위</h3><div id='teamRankingBox'></div></div>
       <div class='panel'><h3 class='sectionTitle'>배틀 진행률</h3><div id='battleBox'></div></div>
-      <div class='panel aiReviewPanel'><h3 class='sectionTitle'>AI 문제 검토</h3><div class='mini'>학생 흐름은 막지 않고, 교사용 참고 의견만 표시합니다.</div><div id='aiReviewBox' class='aiReviewBox'><div class='mini'>[AI 문제 검토] 버튼을 누르면 학생 제출 문제를 검토합니다.</div></div></div><div class='panel'><h3 class='sectionTitle'>로그</h3><div id='logBox'></div></div>
+      <div class='panel aiReviewPanel'><h3 class='sectionTitle'>AI 문제 검토</h3><div class='mini'>AI는 최종 판정이 아니라 교사용 참고 의견만 표시합니다.</div><div id='aiReviewBox' class='aiReviewBox'><div class='mini'>[AI 문제 검토] 버튼을 누르면 학생 제출 문제를 검토합니다.</div></div></div><div class='panel'><h3 class='sectionTitle'>로그</h3><div id='logBox'></div></div>
     </div>
   </div>
 </section>
@@ -4520,7 +4564,7 @@ document.getElementById('startBtn').onclick=()=>fetch(teacherApi('/api/teacher/s
 document.getElementById('endBtn').onclick=()=>fetch(teacherApi('/api/teacher/end'),{method:'POST'});
 document.getElementById('resetBtn').onclick=()=>fetch(teacherApi('/api/teacher/reset'),{method:'POST'});
 document.getElementById('exportQuestionsBtn').onclick=()=>{window.location.href=teacherApi('/api/teacher/export_questions.xlsx');};
-document.getElementById('aiReviewBtn').onclick=async()=>{const btn=document.getElementById('aiReviewBtn');btn.disabled=true;const old=btn.textContent;btn.textContent='AI 검토 중...';if(aiReviewBox){aiReviewBox.innerHTML='<div class="mini">AI가 학생 문제를 검토하는 중입니다. 무료 API 환경에서는 잠시 걸릴 수 있습니다.</div>';}try{const res=await fetch(teacherApi('/api/teacher/ai_review'),{method:'POST'});const data=await res.json().catch(()=>({ok:false,message:'응답 해석 실패',items:[]}));if(data.ok){renderAiReviews(data.items||[],data.meta||{});}else if(aiReviewBox){aiReviewBox.innerHTML=`<div class="mini">${escapeHtml(data.message||'AI 검토를 실행하지 못했습니다.')}</div>`;}}catch(e){if(aiReviewBox){aiReviewBox.innerHTML=`<div class="mini">AI 검토 연결 오류: ${escapeHtml(e.message||e)}</div>`;}}finally{btn.disabled=false;btn.textContent=old;}};
+document.getElementById('aiReviewBtn').onclick=async()=>{const btn=document.getElementById('aiReviewBtn');btn.disabled=true;const old=btn.textContent;btn.textContent='AI 검토 중...';if(aiReviewBox){aiReviewBox.innerHTML='<div class="mini">AI가 학생 문제를 보수적으로 검토하는 중입니다. 무료 API 환경에서는 잠시 걸릴 수 있습니다.</div>';}try{const res=await fetch(teacherApi('/api/teacher/ai_review'),{method:'POST'});const data=await res.json().catch(()=>({ok:false,message:'응답 해석 실패',items:[]}));if(data.ok){renderAiReviews(data.items||[],data.meta||{});}else if(aiReviewBox){aiReviewBox.innerHTML=`<div class="mini">${escapeHtml(data.message||'AI 검토를 실행하지 못했습니다.')}</div>`;}}catch(e){if(aiReviewBox){aiReviewBox.innerHTML=`<div class="mini">AI 검토 연결 오류: ${escapeHtml(e.message||e)}</div>`;}}finally{btn.disabled=false;btn.textContent=old;}};
 document.getElementById('newRoomBtn').onclick=async()=>{const btn=document.getElementById('newRoomBtn');btn.disabled=true;try{if(currentState&&['countdown','running'].includes(currentState.game_status)){await fetch(teacherApi('/api/teacher/end'),{method:'POST'});}else{await fetch(teacherApi('/api/teacher/new_room_setup'),{method:'POST'});}}catch(e){console.error(e);}finally{setTeacherRoomCode('');connectTeacherSocket();btn.disabled=false;showCreate();}};
 document.getElementById('clearBgLiveBtn').onclick=()=>fetch(teacherApi('/api/teacher/clear_background'),{method:'POST'});
 
