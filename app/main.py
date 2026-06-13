@@ -1835,6 +1835,84 @@ TEACHER_CEREMONY_HTML = """
   }
 }
 
+
+
+/* ===== v3.36 student color selector title visibility patch =====
+   Make the personal character-color selector read like a real setting card,
+   not a small helper line. This keeps the text visible in phone portrait. */
+#prepScreen #colorHelp{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  margin:14px 0 10px!important;
+  padding:13px 14px!important;
+  border-radius:18px!important;
+  background:linear-gradient(180deg,#f4fbff,#dcecff)!important;
+  border:1px solid rgba(125,211,252,.42)!important;
+  box-shadow:0 10px 24px rgba(15,31,58,.12),inset 0 1px 0 rgba(255,255,255,.88)!important;
+  color:#0f2545!important;
+  font-size:clamp(18px,4.8vw,25px)!important;
+  font-weight:1000!important;
+  line-height:1.15!important;
+  letter-spacing:-.5px!important;
+  text-align:center!important;
+}
+#prepScreen #colorHelp::before{
+  content:'🎨';
+  margin-right:8px;
+  font-size:.95em;
+}
+@media (orientation:landscape) and (pointer:coarse){
+  #prepScreen #colorHelp{
+    padding:8px 10px!important;
+    margin:8px 0 6px!important;
+    font-size:14px!important;
+    border-radius:14px!important;
+  }
+  #prepScreen #colorHelp::before{font-size:1em;margin-right:5px;}
+}
+
+
+/* ===== v3.37 ceremony crown attachment patch =====
+   Keep the 1st-place crown visually seated on the character's head.
+   The crown is now inside the floating character element, so it follows the
+   character's up/down motion instead of drifting separately. */
+#endScreen .podiumCharacter{overflow:visible!important;}
+#endScreen .podiumCharacter .winnerCrown{
+  position:absolute!important;
+  left:50%!important;
+  top:-28px!important;
+  transform:translateX(-50%) rotate(-6deg)!important;
+  z-index:8!important;
+  font-size:38px!important;
+  line-height:1!important;
+  pointer-events:none!important;
+  filter:drop-shadow(0 6px 8px rgba(0,0,0,.30)) drop-shadow(0 0 10px rgba(251,191,36,.55))!important;
+  animation:crownWiggleAttached 1.9s ease-in-out infinite alternate!important;
+}
+#endScreen .rank1 .podiumCharacter .winnerCrown{top:-32px!important;font-size:44px!important;}
+@keyframes crownWiggleAttached{
+  from{transform:translateX(-50%) rotate(-7deg)}
+  to{transform:translateX(-50%) rotate(7deg)}
+}
+/* Teacher ceremony list: keep crown close to the winner avatar instead of floating over the whole row. */
+.podiumItem .winnerCrown{
+  left:34px!important;
+  top:0!important;
+  font-size:26px!important;
+  transform:translateX(-50%) rotate(-6deg)!important;
+  animation:crownWiggleAttached 1.9s ease-in-out infinite alternate!important;
+}
+@media(max-width:880px){
+  #endScreen .podiumCharacter .winnerCrown{top:-20px!important;font-size:26px!important;}
+  #endScreen .rank1 .podiumCharacter .winnerCrown{top:-24px!important;font-size:30px!important;}
+}
+@media(max-width:820px) and (orientation:landscape){
+  #endScreen .podiumCharacter .winnerCrown,
+  #endScreen .rank1 .podiumCharacter .winnerCrown{top:-18px!important;font-size:24px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -3546,6 +3624,47 @@ button.soft{
   }
 }
 
+
+
+/* ===== v3.37 ceremony crown attachment patch =====
+   Keep the 1st-place crown visually seated on the character's head.
+   The crown is now inside the floating character element, so it follows the
+   character's up/down motion instead of drifting separately. */
+#endScreen .podiumCharacter{overflow:visible!important;}
+#endScreen .podiumCharacter .winnerCrown{
+  position:absolute!important;
+  left:50%!important;
+  top:-28px!important;
+  transform:translateX(-50%) rotate(-6deg)!important;
+  z-index:8!important;
+  font-size:38px!important;
+  line-height:1!important;
+  pointer-events:none!important;
+  filter:drop-shadow(0 6px 8px rgba(0,0,0,.30)) drop-shadow(0 0 10px rgba(251,191,36,.55))!important;
+  animation:crownWiggleAttached 1.9s ease-in-out infinite alternate!important;
+}
+#endScreen .rank1 .podiumCharacter .winnerCrown{top:-32px!important;font-size:44px!important;}
+@keyframes crownWiggleAttached{
+  from{transform:translateX(-50%) rotate(-7deg)}
+  to{transform:translateX(-50%) rotate(7deg)}
+}
+/* Teacher ceremony list: keep crown close to the winner avatar instead of floating over the whole row. */
+.podiumItem .winnerCrown{
+  left:34px!important;
+  top:0!important;
+  font-size:26px!important;
+  transform:translateX(-50%) rotate(-6deg)!important;
+  animation:crownWiggleAttached 1.9s ease-in-out infinite alternate!important;
+}
+@media(max-width:880px){
+  #endScreen .podiumCharacter .winnerCrown{top:-20px!important;font-size:26px!important;}
+  #endScreen .rank1 .podiumCharacter .winnerCrown{top:-24px!important;font-size:30px!important;}
+}
+@media(max-width:820px) and (orientation:landscape){
+  #endScreen .podiumCharacter .winnerCrown,
+  #endScreen .rank1 .podiumCharacter .winnerCrown{top:-18px!important;font-size:24px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -3841,8 +3960,9 @@ function podiumSlot(player,rank){
   const darkColor=darkenColor(bodyColor,0.48);
   const lightColor=lightenColor(bodyColor,0.18);
   return `<div class="podiumSpot rank${rank}">
-    ${rank===1?'<div class="winnerGlow"></div><div class="winnerCrown" aria-hidden="true">👑</div><div class="winnerConfetti"><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span></div>':''}
+    ${rank===1?'<div class="winnerGlow"></div><div class="winnerConfetti"><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span><span class="confettiPiece"></span></div>':''}
     <div class="podiumCharacter" style="--pc:${escapeHtml(bodyColor)};--pc-dark:${escapeHtml(darkColor)};--pc-light:${escapeHtml(lightColor)}" aria-label="${escapeHtml(player.nickname)} 캐릭터">
+      ${rank===1?'<div class="winnerCrown" aria-hidden="true">👑</div>':''}
       <img class="podiumCharacterImg" src="${escapeHtml(buildCharacterSvgUrl(bodyColor))}" data-color="${escapeHtml(bodyColor)}" alt="${escapeHtml(player.nickname)} 캐릭터">
     </div>
     <div class="medalBadge">${ordinalMedal(rank)} ${rank}위</div>
@@ -4668,9 +4788,9 @@ button.soft{
 #createScreen .teacherMusicPanel{justify-content:flex-end;color:#dbeafe;background:rgba(255,255,255,.055)}
 .musicToggleBtn{width:auto!important;min-height:34px!important;padding:8px 12px!important;border-radius:999px!important;background:linear-gradient(135deg,#0ea5e9,#2563eb)!important;color:#fff!important;font-size:13px!important;font-weight:1000!important;box-shadow:0 12px 24px rgba(37,99,235,.18)!important}
 .musicToggleBtn.off{background:linear-gradient(135deg,#64748b,#334155)!important;box-shadow:none!important;color:#e2e8f0!important}
-.musicVolumeLabel{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:900;color:#d9efff;white-space:nowrap}.musicVolumeLabel input{width:96px;accent-color:#38bdf8}.musicHint{font-size:11px;color:#b9d3ee;font-weight:800;min-width:72px;text-align:right}
-@media(max-width:760px){.teacherMusicPanel{justify-content:center!important;gap:8px;margin-top:8px;padding:8px}.musicToggleBtn{font-size:12px!important;padding:7px 10px!important}.musicVolumeLabel input{width:82px}.musicHint{width:100%;text-align:center;font-size:10px}}
-@media(max-width:820px) and (orientation:landscape){#operateScreen .teacherMusicPanel{margin-top:7px;padding:7px 8px;justify-content:flex-start!important}.musicHint{display:none}.musicVolumeLabel input{width:74px}}
+.musicVolumeLabel{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:900;color:#d9efff;white-space:nowrap}.musicVolumeLabel input{width:150px;min-width:150px;accent-color:#38bdf8;cursor:pointer;touch-action:pan-x}.musicHint{font-size:11px;color:#b9d3ee;font-weight:800;min-width:72px;text-align:right}
+@media(max-width:760px){.teacherMusicPanel{justify-content:center!important;gap:8px;margin-top:8px;padding:8px}.musicToggleBtn{font-size:12px!important;padding:7px 10px!important}.musicVolumeLabel{width:100%;justify-content:center}.musicVolumeLabel input{width:min(220px,52vw)!important;min-width:min(220px,52vw)!important}.musicHint{width:100%;text-align:center;font-size:10px}}
+@media(max-width:820px) and (orientation:landscape){#operateScreen .teacherMusicPanel{margin-top:7px;padding:7px 8px;justify-content:flex-start!important}.musicHint{display:none}.musicVolumeLabel input{width:150px!important;min-width:150px!important}}
 
 
 /* ===== v3.34 student info compact grid + teacher setup 3-row patch ===== */
@@ -4733,6 +4853,75 @@ button.soft{
   }
 }
 
+
+
+/* ===== v3.36 PC teacher setup vertical density patch =====
+   Reduce unnecessary top/bottom padding in PC teacher setup cards and inputs
+   so the form feels lighter and fits closer to three rows. Mobile rules above
+   still control phone portrait/landscape layouts. */
+@media (min-width:821px){
+  #createScreen{padding:18px 24px!important;}
+  #createScreen .createCard{padding:19px 22px!important;border-radius:26px!important;}
+  #createScreen .createCard h1{font-size:28px!important;margin-bottom:5px!important;}
+  #createScreen .createGrid{gap:10px!important;margin-top:12px!important;}
+  #createScreen .field label{margin-bottom:4px!important;font-size:12px!important;line-height:1.15!important;}
+  #createScreen input,
+  #createScreen select,
+  #createScreen textarea{min-height:36px!important;padding:7px 10px!important;border-radius:12px!important;}
+  #createScreen .modeBtn{min-height:38px!important;padding:8px 10px!important;border-radius:13px!important;}
+  #createScreen .mapBtn{min-height:54px!important;padding:9px 10px!important;border-radius:14px!important;}
+  #createScreen .mapBtn small{margin-top:2px!important;line-height:1.15!important;}
+  #createScreen .helpBox{padding:9px 11px!important;border-radius:15px!important;}
+  #createScreen .teamLegend{margin-top:6px!important;gap:6px!important;}
+  #createScreen .teamChip{padding:5px 9px!important;}
+  #createScreen .teacherSettingsGrid{gap:8px 10px!important;}
+  #createScreen .teacherSettingsGrid .field input{min-height:36px!important;padding:7px 10px!important;}
+  #createScreen .createActions{margin-top:13px!important;}
+  #createScreen .createActions button{height:42px!important;}
+  #createScreen .teacherMusicPanel{margin-top:10px!important;min-height:44px!important;padding:8px 10px!important;}
+  #createScreen .teacherCredit{margin-top:10px!important;line-height:1.35!important;}
+}
+
+
+/* ===== v3.37 ceremony crown attachment patch =====
+   Keep the 1st-place crown visually seated on the character's head.
+   The crown is now inside the floating character element, so it follows the
+   character's up/down motion instead of drifting separately. */
+#endScreen .podiumCharacter{overflow:visible!important;}
+#endScreen .podiumCharacter .winnerCrown{
+  position:absolute!important;
+  left:50%!important;
+  top:-28px!important;
+  transform:translateX(-50%) rotate(-6deg)!important;
+  z-index:8!important;
+  font-size:38px!important;
+  line-height:1!important;
+  pointer-events:none!important;
+  filter:drop-shadow(0 6px 8px rgba(0,0,0,.30)) drop-shadow(0 0 10px rgba(251,191,36,.55))!important;
+  animation:crownWiggleAttached 1.9s ease-in-out infinite alternate!important;
+}
+#endScreen .rank1 .podiumCharacter .winnerCrown{top:-32px!important;font-size:44px!important;}
+@keyframes crownWiggleAttached{
+  from{transform:translateX(-50%) rotate(-7deg)}
+  to{transform:translateX(-50%) rotate(7deg)}
+}
+/* Teacher ceremony list: keep crown close to the winner avatar instead of floating over the whole row. */
+.podiumItem .winnerCrown{
+  left:34px!important;
+  top:0!important;
+  font-size:26px!important;
+  transform:translateX(-50%) rotate(-6deg)!important;
+  animation:crownWiggleAttached 1.9s ease-in-out infinite alternate!important;
+}
+@media(max-width:880px){
+  #endScreen .podiumCharacter .winnerCrown{top:-20px!important;font-size:26px!important;}
+  #endScreen .rank1 .podiumCharacter .winnerCrown{top:-24px!important;font-size:30px!important;}
+}
+@media(max-width:820px) and (orientation:landscape){
+  #endScreen .podiumCharacter .winnerCrown,
+  #endScreen .rank1 .podiumCharacter .winnerCrown{top:-18px!important;font-size:24px!important;}
+}
+
 </style>
 </head>
 <body>
@@ -4764,13 +4953,13 @@ button.soft{
         <div class='field'><label>배경 이미지</label><input id='bgFile' type='file' accept='image/*'></div>
       </div>
     </div>
-    <div class='createActions'><button id='createBtn'>방 생성</button><button id='clearBgPreBtn' type='button' class='ghost'>기본 배경 복원</button></div><div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn'>🎵 음악모드 ON</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div><div class='teacherCredit'><div>만든이: 서울시교육청 교사 김철원</div><div>문의: churwon@sen.go.kr</div></div>
+    <div class='createActions'><button id='createBtn'>방 생성</button><button id='clearBgPreBtn' type='button' class='ghost'>기본 배경 복원</button></div><div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn off'>🔇 음악모드 OFF</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div><div class='teacherCredit'><div>만든이: 서울시교육청 교사 김철원</div><div>문의: churwon@sen.go.kr</div></div>
   </div>
 </section>
 <section id='operateScreen'>
   <div class='opHeader'>
     <div class='panel codeBox'><div class='codeTextBlock'><div class='mini'>학생 입장 코드</div><div id='codeValue' class='codeValue'>----</div><div id='studentJoinUrl' class='joinUrl'>학생 접속 주소 준비 중</div></div><div class='qrPanel'><img id='joinQr' class='joinQr' alt='학생 입장 QR 코드'><div class='qrCaption'>스마트폰 카메라로 스캔</div></div></div>
-    <div class='panel summaryPanel'><div class='headerMeta'><div class='miniCard primary'><span class='mini'>상태</span><strong id='stateValue'>준비 중</strong></div><div class='miniCard compact'><span class='mini'>참가자</span><strong id='playerCountValue'>0명</strong></div><div class='miniCard primary'><span class='mini'>남은 시간</span><strong id='remainValue'>3:00</strong></div><div class='miniCard compact'><span class='mini'>팀별 인원</span><strong id='teamCountValue'>-</strong></div><div class='miniCard compact'><span class='mini'>미제출</span><strong id='unsubmittedValue'>0명</strong></div></div><div class='opButtons' id='opButtons'><button id='startBtn'>게임 시작</button><button id='endBtn' class='danger'>게임 종료</button><button id='ceremonyBtn' class='ceremonyBtn' type='button'>시상식 보기</button><button id='resetBtn' class='ghost'>다음 게임 준비</button><button id='exportQuestionsBtn' class='soft'>문제 엑셀 다운로드</button><button id='aiReviewBtn' class='soft' type='button'>AI 문제 검토</button><button id='newRoomBtn' class='soft'>새 방 설정</button></div><div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn'>🎵 음악모드 ON</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div></div>
+    <div class='panel summaryPanel'><div class='headerMeta'><div class='miniCard primary'><span class='mini'>상태</span><strong id='stateValue'>준비 중</strong></div><div class='miniCard compact'><span class='mini'>참가자</span><strong id='playerCountValue'>0명</strong></div><div class='miniCard primary'><span class='mini'>남은 시간</span><strong id='remainValue'>3:00</strong></div><div class='miniCard compact'><span class='mini'>팀별 인원</span><strong id='teamCountValue'>-</strong></div><div class='miniCard compact'><span class='mini'>미제출</span><strong id='unsubmittedValue'>0명</strong></div></div><div class='opButtons' id='opButtons'><button id='startBtn'>게임 시작</button><button id='endBtn' class='danger'>게임 종료</button><button id='ceremonyBtn' class='ceremonyBtn' type='button'>시상식 보기</button><button id='resetBtn' class='ghost'>다음 게임 준비</button><button id='exportQuestionsBtn' class='soft'>문제 엑셀 다운로드</button><button id='aiReviewBtn' class='soft' type='button'>AI 문제 검토</button><button id='newRoomBtn' class='soft'>새 방 설정</button></div><div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn off'>🔇 음악모드 OFF</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div></div>
   </div>
   <div class='opMain'>
     <div class='col leftCol'>
@@ -4806,7 +4995,7 @@ let bgDataUrl=null,currentState=null,editingRoom=false,lastGameEndPayload=null;
 const createScreen=document.getElementById('createScreen'),operateScreen=document.getElementById('operateScreen');
 const statusBar=document.getElementById('statusBar'),roomTitleBar=document.getElementById('roomTitleBar'),roomBox=document.getElementById('roomBox'),participantBox=document.getElementById('participantBox'),rankingBox=document.getElementById('rankingBox'),teamRankingBox=document.getElementById('teamRankingBox'),battleBox=document.getElementById('battleBox'),logBox=document.getElementById('logBox'),aiReviewBox=document.getElementById('aiReviewBox');
 const teacherMusic={
-  enabled: localStorage.getItem('remapTeacherMusicMode')!=='off',
+  enabled: localStorage.getItem('remapTeacherMusicModeV2')==='on',
   volume: Math.max(0,Math.min(1,Number(localStorage.getItem('remapTeacherMusicVolume')||'0.35'))),
   current:null,
   lastPhase:null,
@@ -4855,7 +5044,7 @@ function syncTeacherMusic(status, force=false){
     playTeacherTrack('wait',{loop:true,restart:force||teacherMusic.current!=='wait'});
   }
 }
-function setTeacherMusicEnabled(enabled){teacherMusic.enabled=!!enabled;localStorage.setItem('remapTeacherMusicMode',teacherMusic.enabled?'on':'off');if(!teacherMusic.enabled){stopTeacherMusic();}else{syncTeacherMusic((currentState&&currentState.game_status)||'lobby',true);}updateMusicControls();}
+function setTeacherMusicEnabled(enabled){teacherMusic.enabled=!!enabled;localStorage.setItem('remapTeacherMusicModeV2',teacherMusic.enabled?'on':'off');if(!teacherMusic.enabled){stopTeacherMusic();}else{syncTeacherMusic((currentState&&currentState.game_status)||'lobby',true);}updateMusicControls();}
 document.querySelectorAll('.musicToggleBtn').forEach(btn=>btn.addEventListener('click',()=>setTeacherMusicEnabled(!teacherMusic.enabled)));
 document.querySelectorAll('.musicVolume').forEach(sl=>sl.addEventListener('input',e=>setTeacherMusicVolume(e.target.value)));
 updateMusicControls();
