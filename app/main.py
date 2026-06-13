@@ -76,7 +76,7 @@ DEFAULTS = {
     'map_height': 612,
     'question_count': 1,
     'question_time_limit': 20,
-    'total_game_time': 300,
+    'total_game_time': 180,
     'score_win': 3,
     'score_draw': 1,
     'score_lose': 0,
@@ -1774,6 +1774,67 @@ TEACHER_CEREMONY_HTML = """
   #operateScreen .rightCol .aiReviewBox{max-height:160px!important;overflow:auto!important;}
 }
 
+
+/* ===== v3.34 student info compact grid + teacher setup 3-row patch ===== */
+/* Student prep: title stays wide, the six small room/nickname fields form 3 columns x 2 rows on phones. */
+#prepScreen .studentRoomInfoGrid .infoTitleCard{grid-column:1 / -1;}
+#prepScreen .studentRoomInfoGrid .compactInfoCard .value{word-break:keep-all;}
+@media (orientation:portrait) and (pointer:coarse), (max-width:760px){
+  #prepScreen .studentRoomInfoGrid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  #prepScreen .studentRoomInfoGrid .infoTitleCard{
+    grid-column:1 / -1!important;
+  }
+  #prepScreen .studentRoomInfoGrid .compactInfoCard{
+    min-height:76px!important;
+    padding:10px 8px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+  }
+  #prepScreen .studentRoomInfoGrid .compactInfoCard .label{
+    font-size:clamp(10px,2.9vw,12px)!important;
+    line-height:1.15!important;
+    margin-bottom:6px!important;
+    white-space:normal!important;
+    letter-spacing:-.45px!important;
+  }
+  #prepScreen .studentRoomInfoGrid .compactInfoCard .value{
+    font-size:clamp(18px,5vw,28px)!important;
+    line-height:1.05!important;
+    letter-spacing:-1.2px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #prepScreen .studentRoomInfoGrid .infoTitleCard .value{
+    font-size:clamp(21px,6.2vw,34px)!important;
+  }
+}
+@media (orientation:portrait) and (pointer:coarse) and (max-width:380px){
+  #prepScreen .studentRoomInfoGrid{gap:6px!important;}
+  #prepScreen .studentRoomInfoGrid .compactInfoCard{padding:8px 6px!important;min-height:68px!important;border-radius:14px!important;}
+  #prepScreen .studentRoomInfoGrid .compactInfoCard .value{font-size:clamp(16px,4.7vw,22px)!important;}
+}
+/* Student landscape keeps the previous compact side panel to avoid squeezing the question editor. */
+@media (orientation:landscape) and (pointer:coarse){
+  #prepScreen .studentRoomInfoGrid{grid-template-columns:1fr!important;}
+  #prepScreen .studentRoomInfoGrid .infoTitleCard{grid-column:auto!important;}
+}
+/* Teacher PC setup: compact numeric settings become 4 columns, so 10 fields render as 3 rows instead of 5. */
+@media (min-width:821px){
+  #createScreen .teacherSettingsGrid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:10px!important;
+  }
+  #createScreen .teacherSettingsGrid .field input{
+    min-height:40px!important;
+    padding:8px 10px!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3424,6 +3485,67 @@ button.soft{
   #operateScreen .rightCol .aiReviewBox{max-height:160px!important;overflow:auto!important;}
 }
 
+
+/* ===== v3.34 student info compact grid + teacher setup 3-row patch ===== */
+/* Student prep: title stays wide, the six small room/nickname fields form 3 columns x 2 rows on phones. */
+#prepScreen .studentRoomInfoGrid .infoTitleCard{grid-column:1 / -1;}
+#prepScreen .studentRoomInfoGrid .compactInfoCard .value{word-break:keep-all;}
+@media (orientation:portrait) and (pointer:coarse), (max-width:760px){
+  #prepScreen .studentRoomInfoGrid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  #prepScreen .studentRoomInfoGrid .infoTitleCard{
+    grid-column:1 / -1!important;
+  }
+  #prepScreen .studentRoomInfoGrid .compactInfoCard{
+    min-height:76px!important;
+    padding:10px 8px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+  }
+  #prepScreen .studentRoomInfoGrid .compactInfoCard .label{
+    font-size:clamp(10px,2.9vw,12px)!important;
+    line-height:1.15!important;
+    margin-bottom:6px!important;
+    white-space:normal!important;
+    letter-spacing:-.45px!important;
+  }
+  #prepScreen .studentRoomInfoGrid .compactInfoCard .value{
+    font-size:clamp(18px,5vw,28px)!important;
+    line-height:1.05!important;
+    letter-spacing:-1.2px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #prepScreen .studentRoomInfoGrid .infoTitleCard .value{
+    font-size:clamp(21px,6.2vw,34px)!important;
+  }
+}
+@media (orientation:portrait) and (pointer:coarse) and (max-width:380px){
+  #prepScreen .studentRoomInfoGrid{gap:6px!important;}
+  #prepScreen .studentRoomInfoGrid .compactInfoCard{padding:8px 6px!important;min-height:68px!important;border-radius:14px!important;}
+  #prepScreen .studentRoomInfoGrid .compactInfoCard .value{font-size:clamp(16px,4.7vw,22px)!important;}
+}
+/* Student landscape keeps the previous compact side panel to avoid squeezing the question editor. */
+@media (orientation:landscape) and (pointer:coarse){
+  #prepScreen .studentRoomInfoGrid{grid-template-columns:1fr!important;}
+  #prepScreen .studentRoomInfoGrid .infoTitleCard{grid-column:auto!important;}
+}
+/* Teacher PC setup: compact numeric settings become 4 columns, so 10 fields render as 3 rows instead of 5. */
+@media (min-width:821px){
+  #createScreen .teacherSettingsGrid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:10px!important;
+  }
+  #createScreen .teacherSettingsGrid .field input{
+    min-height:40px!important;
+    padding:8px 10px!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -3447,15 +3569,15 @@ button.soft{
     <div class='row prepLayout'>
       <div class='panel prepInfoPanel'>
         <h3>방 정보</h3>
-        <div class='infoGrid'>
-          <div class='infoCard'><div class='label'>방 제목</div><div class='value' id='infoTitle'>-</div></div>
-          <div class='infoCard'><div class='label'>방 코드</div><div class='value' id='infoCode'>-</div></div>
-          <div class='infoCard'><div class='label'>게임 모드</div><div class='value' id='infoMode'>-</div></div>
-          <div class='infoCard'><div class='label'>배틀당 문제 수</div><div class='value' id='infoQuestions'>-</div></div>
-          <div class='infoCard'><div class='label'>문제당 제한시간</div><div class='value' id='infoTime'>-</div></div>
-          <div class='infoCard'><div class='label'>맵 종류</div><div class='value' id='infoMap'>-</div></div>
+        <div class='infoGrid studentRoomInfoGrid'>
+          <div class='infoCard infoTitleCard'><div class='label'>방 제목</div><div class='value' id='infoTitle'>-</div></div>
+          <div class='infoCard compactInfoCard'><div class='label'>방 코드</div><div class='value' id='infoCode'>-</div></div>
+          <div class='infoCard compactInfoCard'><div class='label'>게임 모드</div><div class='value' id='infoMode'>-</div></div>
+          <div class='infoCard compactInfoCard'><div class='label'>배틀당 문제 수</div><div class='value' id='infoQuestions'>-</div></div>
+          <div class='infoCard compactInfoCard'><div class='label'>문제당 제한시간</div><div class='value' id='infoTime'>-</div></div>
+          <div class='infoCard compactInfoCard'><div class='label'>맵 종류</div><div class='value' id='infoMap'>-</div></div>
+          <div class='infoCard compactInfoCard'><div class='label'>닉네임</div><div class='value' id='infoNickname'>-</div></div>
         </div>
-        <div style='margin-top:14px' class='infoCard'><div class='label'>닉네임</div><div class='value' id='infoNickname'>-</div></div>
         <div id='teamSection' style='margin-top:12px'><div style='font-weight:700;color:#173b7a'>팀 선택</div><div id='teamWrap' class='teamWrap'></div></div>
         <div id='colorHelp' style='margin-top:12px' class='mini'>개인전에서는 색상을 직접 고를 수 있습니다. 팀전에서는 팀 색상이 고정됩니다.</div>
         <div id='colorWrap' class='colorWrap'></div>
@@ -3686,7 +3808,7 @@ function lightenColor(hex, factor=0.18){const {r,g,b}=hexToRgb(hex);return `rgb(
 function alphaColor(hex, alpha){const {r,g,b}=hexToRgb(hex);return `rgba(${r},${g},${b},${alpha})`;}
 const playerMascotCache={};
 function getPlayerMascot(color){const key=normalizeCharacterColor(color);if(!playerMascotCache[key]){const img=new Image();img.onload=()=>render();img.onerror=()=>{playerMascotCache[key]=null;};img.src=buildCharacterSvgUrl(key);playerMascotCache[key]=img;}return playerMascotCache[key];}
-function drawPlayer(p){const size=30;const originalColor=p.color||'#60a5fa';const isMe=!!state.playerId&&p.id===state.playerId;const alreadyBattled=!isMe&&Array.isArray(p.battled_ids)&&p.battled_ids.includes(state.playerId);const bodyColor=alreadyBattled?'#94a3b8':originalColor;const mascot=getPlayerMascot(bodyColor);ctx.save();if(p.state==='battling'){ctx.globalAlpha=0.45}ctx.translate(p.x,p.y);if(isMe){ctx.save();ctx.globalAlpha=0.96;ctx.shadowColor='rgba(250,204,21,0.86)';ctx.shadowBlur=24;ctx.fillStyle='rgba(250,204,21,0.30)';ctx.beginPath();ctx.arc(0,0,size/2+13,0,Math.PI*2);ctx.fill();ctx.lineWidth=3;ctx.strokeStyle='rgba(251,191,36,0.84)';ctx.stroke();ctx.restore();}ctx.shadowColor='rgba(15,23,42,0.18)';ctx.shadowBlur=4;ctx.shadowOffsetY=1;if(mascot&&mascot.complete&&mascot.naturalWidth>0){ctx.drawImage(mascot,-size/2,-size/2,size,size);}else{ctx.fillStyle=bodyColor;ctx.beginPath();ctx.arc(0,0,size/2.4,0,Math.PI*2);ctx.fill();}ctx.shadowColor='transparent';if(alreadyBattled){ctx.save();ctx.lineWidth=1.8;ctx.strokeStyle='rgba(71,85,105,.72)';ctx.beginPath();ctx.arc(0,0,size/2+3,0,Math.PI*2);ctx.stroke();ctx.restore();}if(p.state==='battling'){ctx.beginPath();ctx.arc(0,0,size/2+4.8,0,Math.PI*2);ctx.strokeStyle='rgba(239,68,68,0.85)';ctx.lineWidth=2;ctx.stroke();}ctx.restore();ctx.fillStyle=isMe?'#92400e':'#173b7a';ctx.font=isMe?'bold 12px Arial':'12px Arial';ctx.textAlign='center';const teamLabel=(state.settings&&state.settings.game_mode==='team'&&p.team)?` [${p.team}]`:'';ctx.fillText(`${p.nickname}${teamLabel}`,p.x,p.y-24)}
+function drawPlayer(p){const size=30;const originalColor=p.color||'#60a5fa';const isMe=!!state.playerId&&p.id===state.playerId;const alreadyBattled=!isMe&&Array.isArray(p.battled_ids)&&p.battled_ids.includes(state.playerId);const bodyColor=alreadyBattled?'#94a3b8':originalColor;const mascot=getPlayerMascot(bodyColor);ctx.save();if(p.state==='battling'){ctx.globalAlpha=0.45}ctx.translate(p.x,p.y);if(isMe){ctx.save();ctx.globalAlpha=0.96;ctx.shadowColor='rgba(250,204,21,0.86)';ctx.shadowBlur=24;ctx.fillStyle='rgba(250,204,21,0.28)';ctx.beginPath();ctx.arc(0,0,size/2+13,0,Math.PI*2);ctx.fill();ctx.restore();}ctx.shadowColor='rgba(15,23,42,0.18)';ctx.shadowBlur=4;ctx.shadowOffsetY=1;if(mascot&&mascot.complete&&mascot.naturalWidth>0){ctx.drawImage(mascot,-size/2,-size/2,size,size);}else{ctx.fillStyle=bodyColor;ctx.beginPath();ctx.arc(0,0,size/2.4,0,Math.PI*2);ctx.fill();}ctx.shadowColor='transparent';if(alreadyBattled){ctx.save();ctx.lineWidth=1.8;ctx.strokeStyle='rgba(71,85,105,.72)';ctx.beginPath();ctx.arc(0,0,size/2+3,0,Math.PI*2);ctx.stroke();ctx.restore();}if(p.state==='battling'){ctx.beginPath();ctx.arc(0,0,size/2+4.8,0,Math.PI*2);ctx.strokeStyle='rgba(239,68,68,0.85)';ctx.lineWidth=2;ctx.stroke();}ctx.restore();ctx.fillStyle=isMe?'#92400e':'#173b7a';ctx.font=isMe?'bold 12px Arial':'12px Arial';ctx.textAlign='center';const teamLabel=(state.settings&&state.settings.game_mode==='team'&&p.team)?` [${p.team}]`:'';ctx.fillText(`${p.nickname}${teamLabel}`,p.x,p.y-24)}
 function roundRect(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();if(fill)ctx.fill();if(stroke)ctx.stroke()}
 function gameLoop(ts=0){if(!state.gameLoopRunning){state.animationFrameId=null;return;}if(!state.lastFrameTs)state.lastFrameTs=ts;state.lastFrameTs=ts;if(gameScreen.style.display==='grid'){drawScene();}if(state.socket&&state.socket.readyState===1&&gameScreen.style.display==='grid'&&state.gameStatus!=='finished'&&state.gameStatus!=='countdown'){let dx=0,dy=0;if(state.keys['arrowleft']||state.keys['a']||state.keys['KeyA'])dx-=1;if(state.keys['arrowright']||state.keys['d']||state.keys['KeyD'])dx+=1;if(state.keys['arrowup']||state.keys['w']||state.keys['KeyW'])dy-=1;if(state.keys['arrowdown']||state.keys['s']||state.keys['KeyS'])dy+=1;if(state.touchDx||state.touchDy){dx=state.touchDx;dy=state.touchDy;}else{const len=Math.hypot(dx,dy);if(len>1){dx/=len;dy/=len;}}if(dx||dy){const now=performance.now?performance.now():Date.now();const moveInterval=1000/60;if(!state.lastMoveSentAt||now-state.lastMoveSentAt>=moveInterval){state.lastMoveSentAt=now;state.socket.send(JSON.stringify({type:'move',dx:Number(dx.toFixed(3)),dy:Number(dy.toFixed(3))}))}}else{state.lastMoveSentAt=0;}}state.animationFrameId=requestAnimationFrame(gameLoop)}
 window.addEventListener('keydown',e=>{const k=(e.key||'').toLowerCase();if(k)state.keys[k]=true;if(e.code)state.keys[e.code]=true;});window.addEventListener('keyup',e=>{const k=(e.key||'').toLowerCase();if(k)state.keys[k]=false;if(e.code)state.keys[e.code]=false;});window.addEventListener('blur',()=>{state.keys={};});
@@ -4550,6 +4672,67 @@ button.soft{
 @media(max-width:760px){.teacherMusicPanel{justify-content:center!important;gap:8px;margin-top:8px;padding:8px}.musicToggleBtn{font-size:12px!important;padding:7px 10px!important}.musicVolumeLabel input{width:82px}.musicHint{width:100%;text-align:center;font-size:10px}}
 @media(max-width:820px) and (orientation:landscape){#operateScreen .teacherMusicPanel{margin-top:7px;padding:7px 8px;justify-content:flex-start!important}.musicHint{display:none}.musicVolumeLabel input{width:74px}}
 
+
+/* ===== v3.34 student info compact grid + teacher setup 3-row patch ===== */
+/* Student prep: title stays wide, the six small room/nickname fields form 3 columns x 2 rows on phones. */
+#prepScreen .studentRoomInfoGrid .infoTitleCard{grid-column:1 / -1;}
+#prepScreen .studentRoomInfoGrid .compactInfoCard .value{word-break:keep-all;}
+@media (orientation:portrait) and (pointer:coarse), (max-width:760px){
+  #prepScreen .studentRoomInfoGrid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  #prepScreen .studentRoomInfoGrid .infoTitleCard{
+    grid-column:1 / -1!important;
+  }
+  #prepScreen .studentRoomInfoGrid .compactInfoCard{
+    min-height:76px!important;
+    padding:10px 8px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+  }
+  #prepScreen .studentRoomInfoGrid .compactInfoCard .label{
+    font-size:clamp(10px,2.9vw,12px)!important;
+    line-height:1.15!important;
+    margin-bottom:6px!important;
+    white-space:normal!important;
+    letter-spacing:-.45px!important;
+  }
+  #prepScreen .studentRoomInfoGrid .compactInfoCard .value{
+    font-size:clamp(18px,5vw,28px)!important;
+    line-height:1.05!important;
+    letter-spacing:-1.2px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #prepScreen .studentRoomInfoGrid .infoTitleCard .value{
+    font-size:clamp(21px,6.2vw,34px)!important;
+  }
+}
+@media (orientation:portrait) and (pointer:coarse) and (max-width:380px){
+  #prepScreen .studentRoomInfoGrid{gap:6px!important;}
+  #prepScreen .studentRoomInfoGrid .compactInfoCard{padding:8px 6px!important;min-height:68px!important;border-radius:14px!important;}
+  #prepScreen .studentRoomInfoGrid .compactInfoCard .value{font-size:clamp(16px,4.7vw,22px)!important;}
+}
+/* Student landscape keeps the previous compact side panel to avoid squeezing the question editor. */
+@media (orientation:landscape) and (pointer:coarse){
+  #prepScreen .studentRoomInfoGrid{grid-template-columns:1fr!important;}
+  #prepScreen .studentRoomInfoGrid .infoTitleCard{grid-column:auto!important;}
+}
+/* Teacher PC setup: compact numeric settings become 4 columns, so 10 fields render as 3 rows instead of 5. */
+@media (min-width:821px){
+  #createScreen .teacherSettingsGrid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:10px!important;
+  }
+  #createScreen .teacherSettingsGrid .field input{
+    min-height:40px!important;
+    padding:8px 10px!important;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -4568,10 +4751,10 @@ button.soft{
       <div id='teamCountWrap' class='field'><label>팀 수</label><input id='team_count' type='number' min='2' max='5' value='4'></div>
       <div class='field full'><label>맵 종류</label><input id='map_type' type='hidden' value='open'><div class='mapButtons'><button type='button' class='mapBtn active' data-map='open'>오픈 스퀘어<small>넓은 자유 이동형</small></button><button type='button' class='mapBtn' data-map='maze'>미로형 맵<small>벽을 피해 만나는 구조</small></button></div></div>
       <div class='helpBox full teamFixedBox'><b>팀전 색상 고정</b><div class='teamLegend'><span class='teamChip team-A'>A 파랑</span><span class='teamChip team-B'>B 빨강</span><span class='teamChip team-C'>C 노랑</span><span class='teamChip team-D'>D 초록</span><span class='teamChip team-E'>E 회색</span></div></div>
-      <div class='row full'>
+      <div class='row full teacherSettingsGrid'>
         <div class='field'><label>배틀 문제 수</label><input id='question_count' type='number' min='1' value='1'></div>
         <div class='field'><label>문제당 제한시간(초)</label><input id='question_time_limit' type='number' value='20'></div>
-        <div class='field'><label>총 게임 시간(초)</label><input id='total_game_time' type='number' value='300'></div>
+        <div class='field'><label>총 게임 시간(초)</label><input id='total_game_time' type='number' value='180'></div>
         <div class='field'><label>이동 속도</label><input id='player_speed' type='number' step='0.1' value='7.5'></div>
         <div class='field'><label>맵 너비</label><input id='map_width' type='number' value='1060'></div>
         <div class='field'><label>맵 높이</label><input id='map_height' type='number' value='612'></div>
@@ -4587,7 +4770,7 @@ button.soft{
 <section id='operateScreen'>
   <div class='opHeader'>
     <div class='panel codeBox'><div class='codeTextBlock'><div class='mini'>학생 입장 코드</div><div id='codeValue' class='codeValue'>----</div><div id='studentJoinUrl' class='joinUrl'>학생 접속 주소 준비 중</div></div><div class='qrPanel'><img id='joinQr' class='joinQr' alt='학생 입장 QR 코드'><div class='qrCaption'>스마트폰 카메라로 스캔</div></div></div>
-    <div class='panel summaryPanel'><div class='headerMeta'><div class='miniCard primary'><span class='mini'>상태</span><strong id='stateValue'>준비 중</strong></div><div class='miniCard compact'><span class='mini'>참가자</span><strong id='playerCountValue'>0명</strong></div><div class='miniCard primary'><span class='mini'>남은 시간</span><strong id='remainValue'>5:00</strong></div><div class='miniCard compact'><span class='mini'>팀별 인원</span><strong id='teamCountValue'>-</strong></div><div class='miniCard compact'><span class='mini'>미제출</span><strong id='unsubmittedValue'>0명</strong></div></div><div class='opButtons' id='opButtons'><button id='startBtn'>게임 시작</button><button id='endBtn' class='danger'>게임 종료</button><button id='ceremonyBtn' class='ceremonyBtn' type='button'>시상식 보기</button><button id='resetBtn' class='ghost'>다음 게임 준비</button><button id='exportQuestionsBtn' class='soft'>문제 엑셀 다운로드</button><button id='aiReviewBtn' class='soft' type='button'>AI 문제 검토</button><button id='newRoomBtn' class='soft'>새 방 설정</button></div><div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn'>🎵 음악모드 ON</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div></div>
+    <div class='panel summaryPanel'><div class='headerMeta'><div class='miniCard primary'><span class='mini'>상태</span><strong id='stateValue'>준비 중</strong></div><div class='miniCard compact'><span class='mini'>참가자</span><strong id='playerCountValue'>0명</strong></div><div class='miniCard primary'><span class='mini'>남은 시간</span><strong id='remainValue'>3:00</strong></div><div class='miniCard compact'><span class='mini'>팀별 인원</span><strong id='teamCountValue'>-</strong></div><div class='miniCard compact'><span class='mini'>미제출</span><strong id='unsubmittedValue'>0명</strong></div></div><div class='opButtons' id='opButtons'><button id='startBtn'>게임 시작</button><button id='endBtn' class='danger'>게임 종료</button><button id='ceremonyBtn' class='ceremonyBtn' type='button'>시상식 보기</button><button id='resetBtn' class='ghost'>다음 게임 준비</button><button id='exportQuestionsBtn' class='soft'>문제 엑셀 다운로드</button><button id='aiReviewBtn' class='soft' type='button'>AI 문제 검토</button><button id='newRoomBtn' class='soft'>새 방 설정</button></div><div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn'>🎵 음악모드 ON</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div></div>
   </div>
   <div class='opMain'>
     <div class='col leftCol'>
