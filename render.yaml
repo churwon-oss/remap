@@ -7,3 +7,5 @@ services:
     envVars:
       - key: REMAP_RUNTIME
         value: render
+      - key: REMAP_PUBLIC_BASE_URL
+        value: https://remap-oxrv.onrender.com
