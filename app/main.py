@@ -86,22 +86,33 @@ def get_lan_ip() -> str:
 def get_network_base_url(request: Request) -> str:
     """Return the public student-facing origin for the current runtime.
 
-    Windows/developer builds intentionally advertise the teacher PC's LAN IP.
-    Render sits behind a reverse proxy, so the container's private 10.x address
-    must never be exposed in the QR code or copied student URL.
+    Local Windows/developer builds advertise the teacher PC's LAN IP. Public
+    deployments use the browser-visible host from reverse-proxy headers. This
+    auto-detection is intentional because an existing Render service may not
+    re-import render.yaml environment variables on every source deployment.
     """
     forwarded_proto = (request.headers.get('x-forwarded-proto') or '').split(',')[0].strip()
     scheme = forwarded_proto or request.url.scheme or 'http'
+    configured_origin = os.environ.get('REMAP_PUBLIC_BASE_URL', '').strip().rstrip('/')
+    forwarded_host = (request.headers.get('x-forwarded-host') or '').split(',')[0].strip()
+    host_header = (request.headers.get('host') or '').split(',')[0].strip()
+    public_netloc = forwarded_host or host_header or request.url.netloc
+    public_hostname = public_netloc.split(':', 1)[0].strip().lower()
 
-    if runtime_settings.mode == 'render':
-        configured_origin = os.environ.get('REMAP_PUBLIC_BASE_URL', '').strip().rstrip('/')
-        if configured_origin:
-            return configured_origin
-        forwarded_host = (request.headers.get('x-forwarded-host') or '').split(',')[0].strip()
-        host_header = (request.headers.get('host') or '').split(',')[0].strip()
-        netloc = forwarded_host or host_header or request.url.netloc
-        if netloc:
-            return f'{scheme}://{netloc}'.rstrip('/')
+    if configured_origin and runtime_settings.mode == 'render':
+        return configured_origin
+
+    is_render_host = public_hostname.endswith('.onrender.com')
+    is_public_https_host = (
+        scheme == 'https'
+        and public_hostname
+        and public_hostname not in {'localhost', '127.0.0.1', '0.0.0.0', '::1'}
+        and not public_hostname.startswith('10.')
+        and not public_hostname.startswith('192.168.')
+        and not public_hostname.startswith('172.16.')
+    )
+    if public_netloc and (runtime_settings.mode == 'render' or is_render_host or is_public_https_host):
+        return f'{scheme}://{public_netloc}'.rstrip('/')
 
     host = request.url.hostname or get_lan_ip()
     port = request.url.port
@@ -6468,15 +6479,19 @@ async function refreshAccessInfo(code){
   qrEl.src=`/api/room/qr.svg?code=${encodeURIComponent(code)}&v=${Date.now()}`;
   if(qrModal&&qrModal.classList.contains('show')){qrModalImg.src=qrEl.src;qrModalCode.textContent=code;}
   urlEl.textContent='학생 접속 주소 불러오는 중...';
+  const browserVisibleUrl=`${location.origin}/?code=${code}`;
+  urlEl.textContent=browserVisibleUrl;
+  if(qrModal&&qrModal.classList.contains('show'))qrModalUrl.textContent=browserVisibleUrl;
   try{
     const res=await fetch(`/api/access_info?code=${encodeURIComponent(code)}`,{cache:'no-store'});
     const data=await res.json();
-    urlEl.textContent=data.student_url||`${location.origin}/?code=${code}`;
+    const apiUrl=String(data.student_url||'').trim();
+    if(apiUrl){
+      const parsed=new URL(apiUrl,location.origin);
+      if(parsed.origin===location.origin){urlEl.textContent=parsed.href;}
+    }
     if(qrModal&&qrModal.classList.contains('show'))qrModalUrl.textContent=urlEl.textContent;
-  }catch(e){
-    urlEl.textContent=`${location.origin}/?code=${code}`;
-    if(qrModal&&qrModal.classList.contains('show'))qrModalUrl.textContent=urlEl.textContent;
-  }
+  }catch(e){}
 }
 function applyStatusStyle(status){statusBar.classList.remove('status-running','status-finished','status-waiting');if(status==='running'){statusBar.classList.add('status-running');}else if(status==='finished'){statusBar.classList.add('status-finished');}else if(status==='lobby'||status==='countdown'){statusBar.classList.add('status-waiting');}}
 function updateCeremonyButton(status){const btn=document.getElementById('ceremonyBtn');const box=document.getElementById('opButtons');const show=status==='finished';if(btn){btn.classList.toggle('show',show);}if(box){box.classList.toggle('hasCeremony',show);}}
