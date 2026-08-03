@@ -8,4 +8,4 @@ services:
       - key: REMAP_RUNTIME
         value: render
       - key: REMAP_VERSION
-        value: 4.1.9
+        value: 4.2.1

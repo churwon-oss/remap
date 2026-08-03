@@ -3025,6 +3025,7 @@ TEACHER_CEREMONY_HTML = """
 .wrap{width:min(1180px,96vw);margin:18px auto 34px;background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(232,242,255,.96));border:2px solid rgba(15,31,58,.65);border-radius:28px;color:#0f2545;box-shadow:0 28px 90px rgba(0,0,0,.32);padding:22px;overflow:hidden}.kicker{display:inline-flex;gap:8px;align-items:center;padding:8px 18px;border-radius:999px;background:#071b33;color:#fde68a;border:2px solid #fbbf24;font-size:13px;font-weight:1000}.head{text-align:center}.head h1{margin:12px 0 5px;font-size:clamp(34px,5vw,58px);letter-spacing:-1px}.sub{color:#52708f;font-weight:800}.banner{display:flex;gap:14px;align-items:center;margin:18px 0 12px;padding:16px;border-radius:22px;background:linear-gradient(135deg,#dff6ff,#dfe7ff);border:1px solid rgba(91,141,204,.28)}.bannerIcon{font-size:34px}.banner strong{display:block;font-size:24px;color:#0f2545}.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:14px}.panel{background:linear-gradient(180deg,#10223c,#07182d);color:#eef7ff;border-radius:24px;padding:16px;border:1px solid rgba(191,219,254,.22);box-shadow:0 18px 48px rgba(15,31,58,.18)}.panel h2{margin:0 0 12px;font-size:20px}.podium{display:grid;gap:10px}.podiumItem{position:relative;display:grid;grid-template-columns:68px minmax(0,1fr) 88px;align-items:center;gap:12px;padding:14px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}.podiumItem.rank1{background:linear-gradient(135deg,rgba(251,191,36,.28),rgba(255,255,255,.08));border-color:rgba(251,191,36,.45)}.avatar{width:58px;height:58px;object-fit:contain;filter:drop-shadow(0 10px 16px rgba(0,0,0,.22))}.rankBadge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#e2e8f0;color:#0f2545;font-weight:1000;font-size:12px}.rank1 .rankBadge{background:linear-gradient(135deg,#fde68a,#f59e0b)}.name{display:block;margin-top:6px;color:#fff;font-size:21px;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{color:#bad0ec;font-size:12px;margin-top:3px;font-weight:800}.score{text-align:right;color:#fbbf24;font-size:24px;font-weight:1000}.list{display:grid;gap:8px}.item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);color:#eef7ff}.item strong{color:#fbbf24}.mini{font-size:12px;color:#aecaec}.mvp{display:grid;gap:9px}.mvpCard{display:flex;align-items:center;gap:12px;padding:12px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.10)}.mvpIcon{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(56,189,248,.25),rgba(139,92,246,.20));font-size:22px}.log{max-height:190px;overflow:auto;display:grid;gap:6px}.empty{padding:28px;text-align:center;color:#aecaec;border:1px dashed rgba(255,255,255,.15);border-radius:18px}.foot{display:flex;justify-content:center;margin-top:16px}.home{border:0;border-radius:16px;padding:13px 34px;font-weight:1000;font-size:16px;background:linear-gradient(135deg,#38bdf8,#7c3aed);color:#fff;cursor:pointer}
 @media(max-width:760px){.topbar{height:56px}.title{font-size:26px}.wrap{margin:8px auto 18px;padding:14px;border-radius:20px}.grid{grid-template-columns:1fr}.head h1{font-size:30px}.podiumItem{grid-template-columns:58px minmax(0,1fr) 64px;padding:10px}.avatar{width:50px;height:50px}.name{font-size:16px}.score{font-size:18px}.close{right:8px;padding:8px 12px}.brand{left:10px;font-size:18px}.banner strong{font-size:18px}}
 
+
 /* ===== v3.26 teacher credit footer patch ===== */
 @media(max-width:1180px){
   #createScreen .teacherCredit{
@@ -3137,6 +3138,12 @@ TEACHER_CEREMONY_HTML = """
 .treasureToggleRow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.treasureToggleLabel{display:flex;align-items:center;gap:9px;font-weight:1000;color:#eaf7ff}.treasureToggleLabel input{width:18px;height:18px;accent-color:#38bdf8}.treasureConfig{display:none;margin-top:12px;border-top:1px solid rgba(125,211,252,.22);padding-top:12px}.treasureConfig.active{display:block}.treasureTopRow{display:grid;grid-template-columns:minmax(180px,240px) minmax(0,1fr);gap:10px;align-items:end}.treasureEditor{display:grid;gap:10px;margin-top:10px}.treasureItem{border:1px solid rgba(191,219,254,.20);background:linear-gradient(180deg,rgba(226,241,255,.12),rgba(255,255,255,.07));border-radius:16px;padding:10px}.treasureItemHeader{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;color:#fff;font-weight:1000}.treasureItem textarea{min-height:58px}.treasureItem textarea,.treasureItem input,.treasureItem select{background:linear-gradient(180deg,#f8fbff,#e7f1ff)!important;color:#102846!important;border-color:#b8d2f0!important}.treasureChoices{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.treasureItem input,.treasureItem textarea,.treasureItem select{width:100%}.treasureMetaGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.treasureHint{font-size:12px;color:#b9d8f5;font-weight:800;line-height:1.35}.treasureSummaryPanel{border-color:rgba(251,191,36,.28)!important;background:linear-gradient(180deg,rgba(251,191,36,.10),rgba(255,255,255,.055))!important}.treasureSummaryItem{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);font-size:12px}.treasureSummaryItem strong{color:#0f172a!important;font-weight:1000}
 @media(max-width:820px){.treasureTopRow{grid-template-columns:1fr}.treasureChoices{grid-template-columns:1fr}.treasureMetaGrid{grid-template-columns:1fr 1fr}.treasureModeBox{padding:10px}}
 
+
+/* ===== v4.2.1 final question flow override ===== */
+#prepScreen #questionsList{display:block!important;}
+#prepScreen #questionsList .qitem{height:auto!important;min-height:0!important;max-height:none!important;flex:0 0 auto!important;margin:0 0 16px!important;padding:12px!important;}
+#prepScreen #questionsList .qitem:last-child{margin-bottom:0!important;}
+#prepScreen .questionTitle{color:#12315a!important;font-size:18px!important;font-weight:1000!important;}
 </style>
 </head>
 <body>
@@ -4848,6 +4855,44 @@ button.soft{
   }
 }
 
+
+
+/* ===== v4.2.1 final question-card flow override =====
+   A question card occupies only its actual content height. This final rule is
+   deliberately placed at the end of STUDENT_HTML so older landscape/desktop
+   100% min-height rules cannot create a large empty area between questions. */
+#prepScreen #questionsList{
+  display:block!important;
+  overflow-y:auto!important;
+}
+#prepScreen #questionsList .qitem{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  flex:0 0 auto!important;
+  margin:0 0 16px!important;
+  padding:12px!important;
+}
+#prepScreen #questionsList .qitem:last-child{margin-bottom:0!important;}
+#prepScreen .questionTitle{
+  display:inline-flex!important;
+  align-items:center!important;
+  min-height:30px!important;
+  color:#12315a!important;
+  font-size:18px!important;
+  font-weight:1000!important;
+  letter-spacing:-.25px!important;
+}
+@media (orientation:landscape) and (pointer:coarse),
+       (orientation:landscape) and (max-width:980px),
+       (min-width:881px) and (pointer:fine){
+  #prepScreen #questionsList .qitem{
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    margin:0 0 14px!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -5079,7 +5124,7 @@ function buildEmptyQuestions(count){return Array.from({length:count},()=>({text:
 function ensureQuestionCount(count){const required=Math.max(0,Number(count)||0);while(state.questions.length<required){state.questions.push({text:'',choices:['','','',''],answer:0});}if(state.questions.length>required){state.questions=state.questions.slice(0,required);}}
 function renderTeams(count=4){teamWrap.innerHTML=''; ['A','B','C','D','E'].slice(0,count).forEach(t=>{const b=document.createElement('button');b.className='teamBtn team-'+t+(state.selectedTeam===t?' active':'');b.textContent=t+'팀';b.style.background=TEAM_COLORS[t];b.style.borderColor='rgba(255,255,255,.54)';b.style.color='#fff';b.style.boxShadow=state.selectedTeam===t?'0 12px 24px rgba(15,31,58,.22), 0 0 0 3px rgba(255,255,255,.82)':'0 8px 18px rgba(15,31,58,.14)';b.onclick=()=>{state.selectedTeam=t;renderTeams(count)};teamWrap.appendChild(b);});}
 function renderColors(){colorWrap.innerHTML=''; const colorNames=['연빨강','빨강','진빨강','핑크','살구','주황','호박','노랑','라임','초록','민트','청록','하늘','파랑','진파랑','남색','연보라','보라','진보라','마젠타','갈색','흰색','검정']; CHAR_COLORS.forEach((c,idx)=>{const b=document.createElement('button');b.className='colorBtn'+(state.selectedColor===c?' active':'');b.style.background=c;b.title=colorNames[idx]||c;b.onclick=()=>{state.selectedColor=c;renderColors()};colorWrap.appendChild(b);});}
-function renderQuestionEditor(){questionsList.innerHTML='';const required=state.roomInfo?.question_count||0;document.getElementById('requiredCount').textContent=`문제 ${required}개 필수`;if(!state.questions.length){questionsList.innerHTML='<div class="mini" style="padding-top:8px">방 정보를 먼저 확인하세요.</div>';return;}state.questions.forEach((q,idx)=>{const div=document.createElement('div');div.className='qitem';const text=escapeHtml(q.text||'');div.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong style="color:#f4fbff">문제 ${idx+1}</strong><span class="badge">필수</span></div><textarea data-field="text" data-idx="${idx}" rows="2" style="width:100%;margin-top:8px" placeholder="문제 내용을 입력하세요">${text}</textarea>${['①','②','③','④'].map((n,i)=>`<div class="questionChoiceRow"><span class="choiceBadge">${n}</span><input data-field="choice" data-cidx="${i}" data-idx="${idx}" value="${escapeHtml(q.choices[i]||'')}" style="flex:1" /><label class="answerRadioLabel"><input type="radio" name="ans_${idx}" data-field="answer" data-idx="${idx}" value="${i}" ${q.answer===i?'checked':''}/><span>정답</span></label></div>`).join('')}`;questionsList.appendChild(div);});document.querySelectorAll('[data-field="text"]').forEach(el=>el.oninput=e=>state.questions[Number(el.dataset.idx)].text=e.target.value);document.querySelectorAll('[data-field="choice"]').forEach(el=>el.oninput=e=>state.questions[Number(el.dataset.idx)].choices[Number(el.dataset.cidx)]=e.target.value);document.querySelectorAll('[data-field="answer"]').forEach(el=>el.onchange=e=>state.questions[Number(el.dataset.idx)].answer=Number(e.target.value));}
+function renderQuestionEditor(){questionsList.innerHTML='';const required=state.roomInfo?.question_count||0;document.getElementById('requiredCount').textContent=`문제 ${required}개 필수`;if(!state.questions.length){questionsList.innerHTML='<div class="mini" style="padding-top:8px">방 정보를 먼저 확인하세요.</div>';return;}state.questions.forEach((q,idx)=>{const div=document.createElement('div');div.className='qitem';const text=escapeHtml(q.text||'');div.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><strong class="questionTitle">문제 ${idx+1}</strong><span class="badge">필수</span></div><textarea data-field="text" data-idx="${idx}" rows="2" style="width:100%;margin-top:8px" placeholder="문제 내용을 입력하세요">${text}</textarea>${['①','②','③','④'].map((n,i)=>`<div class="questionChoiceRow"><span class="choiceBadge">${n}</span><input data-field="choice" data-cidx="${i}" data-idx="${idx}" value="${escapeHtml(q.choices[i]||'')}" style="flex:1" /><label class="answerRadioLabel"><input type="radio" name="ans_${idx}" data-field="answer" data-idx="${idx}" value="${i}" ${q.answer===i?'checked':''}/><span>정답</span></label></div>`).join('')}`;questionsList.appendChild(div);});document.querySelectorAll('[data-field="text"]').forEach(el=>el.oninput=e=>state.questions[Number(el.dataset.idx)].text=e.target.value);document.querySelectorAll('[data-field="choice"]').forEach(el=>el.oninput=e=>state.questions[Number(el.dataset.idx)].choices[Number(el.dataset.cidx)]=e.target.value);document.querySelectorAll('[data-field="answer"]').forEach(el=>el.onchange=e=>state.questions[Number(el.dataset.idx)].answer=Number(e.target.value));}
 const PLAYER_SESSION_LATEST_KEY='remap_player_session_latest_v2';
 function playerSessionKey(roomCode,roundId){return `remap_player_session_v2_${String(roomCode||'').toUpperCase()}_${Number(roundId||0)}`;}
 function savePlayerSession(){
@@ -6194,6 +6239,7 @@ button.soft{
 
 
 /* ===== v4.0 local settings, diagnostics, and PC shortcut tools ===== */
+.researchIntro{margin:0 0 16px;padding:13px 16px;border-radius:18px;background:linear-gradient(135deg,#e7f7ff,#e9edff);border:1px solid rgba(91,141,204,.28);box-shadow:0 10px 24px rgba(15,31,58,.07)}.researchIntro strong{display:block;color:#10325f;font-size:20px;font-weight:1000;letter-spacing:-.45px}.researchIntro span{display:block;margin-top:4px;color:#526a8a;font-size:12px;font-weight:900;line-height:1.45}.accessActions{justify-content:flex-start}.accessActions #copyStudentUrlBtn{min-width:112px}@media(max-width:760px){.researchIntro{padding:11px 12px}.researchIntro strong{font-size:17px}.researchIntro span{font-size:11px}.accessActions #copyStudentUrlBtn{width:100%}}
 .topActions{display:flex;align-items:center;gap:8px;z-index:8}.settingsTopBtn{width:auto;height:38px;min-height:38px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.10)!important;border:1px solid rgba(148,197,255,.30)!important;box-shadow:none!important;font-size:13px!important;font-weight:900!important;white-space:nowrap}.accessActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.accessActions button{width:auto;min-height:34px;padding:7px 10px;font-size:12px;box-shadow:none}.settingsModal{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(2,8,23,.74);backdrop-filter:blur(10px)}.settingsModal.show{display:flex}.settingsCard{width:min(900px,96vw);max-height:92vh;overflow:auto;border-radius:26px;padding:22px;background:linear-gradient(155deg,#f8fbff,#e6f1ff);border:1px solid rgba(148,197,255,.65);box-shadow:0 34px 100px rgba(0,0,0,.42);color:#10233f;position:relative}.settingsClose{position:absolute;right:14px;top:14px;width:40px;height:40px;padding:0;border-radius:999px;background:#10233f!important;color:#fff!important;font-size:25px;box-shadow:none!important}.settingsTitle{margin:0 48px 6px 0;color:#0f2d59;font-size:27px}.settingsLead{color:#526a8a;font-size:13px;line-height:1.5}.settingsGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.settingsSection{border-radius:18px;padding:14px;background:linear-gradient(180deg,#ffffff,#edf5ff);border:1px solid rgba(91,141,204,.28);box-shadow:0 10px 26px rgba(15,31,58,.08)}.settingsSection.full{grid-column:1/-1}.settingsSection h3{margin:0 0 10px;color:#12315a}.settingsSection label{display:block;margin:8px 0 5px;color:#4d6688;font-size:12px;font-weight:900}.settingsSection input,.settingsSection select{background:#fff!important;color:#10233f!important}.modelSelectWrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.modelSelectWrap select{width:100%;min-height:44px;border-radius:12px;padding:8px 10px;border:1px solid rgba(91,141,204,.35);font-weight:800}.modelSelectWrap button{min-width:112px;box-shadow:none}.settingsButtons{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}.settingsButtons button{width:auto;min-height:38px;padding:8px 11px;font-size:13px}.settingsStatus{padding:10px 12px;border-radius:13px;background:#e8f2ff;border:1px solid rgba(91,141,204,.22);color:#173b7a;font-size:13px;font-weight:900;line-height:1.45}.settingsStatus.ok{background:#dcfce7;border-color:#86efac;color:#166534}.settingsStatus.warn{background:#fef3c7;border-color:#fde68a;color:#854d0e}.persistRow{display:flex!important;align-items:center;gap:8px;margin-top:10px!important}.persistRow input{width:18px!important;height:18px!important;margin:0!important;accent-color:#2563eb}.diagGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.diagItem{padding:10px;border-radius:13px;background:#f4f8ff;border:1px solid rgba(91,141,204,.20);min-width:0}.diagItem span{display:block;color:#617795;font-size:11px;font-weight:900}.diagItem strong{display:block;margin-top:4px;color:#10233f;font-size:14px;word-break:break-word}.settingsNote{margin-top:8px;color:#617795;font-size:12px;line-height:1.5}.versionBadge{display:inline-flex;margin-top:6px;padding:5px 8px;border-radius:999px;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:1000}.apiKeyWrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.apiKeyWrap button{min-width:62px;box-shadow:none}.inlineCheck{display:flex;align-items:center;gap:8px}.inlineCheck input{width:18px!important;height:18px!important}.localOnlyHint{display:none;margin-top:8px;padding:8px;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12px;font-weight:800}.localOnlyHint.show{display:block}
 @media(max-width:760px){.topActions{gap:4px}.settingsTopBtn{height:32px;min-height:32px;padding:0 8px;font-size:11px!important}.settingsGrid{grid-template-columns:1fr}.settingsSection.full{grid-column:auto}.diagGrid{grid-template-columns:1fr 1fr}.settingsCard{padding:18px 14px}.accessActions{justify-content:center}.settingsButtons button{flex:1}.topbar .statusBadge{max-width:118px!important}}
 
@@ -6207,6 +6253,10 @@ button.soft{
 </div>
 <section id='createScreen'>
   <div class='createCard'>
+    <div class='researchIntro' aria-label='연구 작품 정보'>
+      <strong>문제를 만드는 학생, 배움의 주체가 되다</strong>
+      <span>학생 주도형 복습 소프트웨어 ReMap의 개발 및 적용 · 대상: 고등학교 1·2학년</span>
+    </div>
     <h1>방 생성 / 설정</h1>
     <div class='mini'>처음 사용해도 바로 이해되도록 설정 화면만 먼저 보여줍니다. 방을 만들면 맵 중심 운영 화면으로 전환됩니다.</div>
     <div class='createGrid'>
@@ -6229,12 +6279,12 @@ button.soft{
         <div class='field'><label>배경 이미지</label><input id='bgFile' type='file' accept='image/*'></div>
       </div>
     </div>
-    <div class='createActions'><button id='createBtn'>방 생성</button><button id='clearBgPreBtn' type='button' class='ghost'>기본 배경 복원</button></div><div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn off'>🔇 음악모드 OFF</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div><div class='teacherCredit'><div>만든이: 서울시교육청 교사 김철원</div><div>문의: churwon@sen.go.kr</div></div>
+    <div class='createActions'><button id='createBtn'>방 생성</button><button id='clearBgPreBtn' type='button' class='ghost'>기본 배경 복원</button></div><div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn off'>🔇 음악모드 OFF</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div>
   </div>
 </section>
 <section id='operateScreen'>
   <div class='opHeader'>
-    <div class='panel codeBox'><div class='codeTextBlock'><div class='mini'>학생 입장 코드</div><div id='codeValue' class='codeValue'>----</div><div id='studentJoinUrl' class='joinUrl'>학생 접속 주소 준비 중</div><div class='accessActions'><button id='downloadShortcutBtn' type='button' class='ghost'>🖥 PC용 바로가기</button><button id='downloadQrBtn' type='button' class='ghost'>QR 이미지 저장</button><button id='copyStudentUrlBtn' type='button' class='ghost'>주소 복사</button></div></div><div class='qrPanel'><img id='joinQr' class='joinQr' alt='학생 입장 QR 코드'><div class='qrCaption'>스마트폰 카메라로 스캔</div></div></div>
+    <div class='panel codeBox'><div class='codeTextBlock'><div class='mini'>학생 입장 코드</div><div id='codeValue' class='codeValue'>----</div><div id='studentJoinUrl' class='joinUrl'>학생 접속 주소 준비 중</div><div class='accessActions'><button id='copyStudentUrlBtn' type='button' class='ghost'>주소 복사</button></div></div><div class='qrPanel'><img id='joinQr' class='joinQr' alt='학생 입장 QR 코드'><div class='qrCaption'>스마트폰 카메라로 스캔</div></div></div>
     <div class='panel summaryPanel'><div class='headerMeta'><div class='miniCard primary'><span class='mini'>상태</span><strong id='stateValue'>준비 중</strong></div><div class='miniCard compact'><span class='mini'>참가자</span><strong id='playerCountValue'>0명</strong></div><div class='miniCard primary'><span class='mini'>남은 시간</span><strong id='remainValue'>3:00</strong></div><div class='miniCard compact'><span class='mini'>팀별 인원</span><strong id='teamCountValue'>-</strong></div><div class='miniCard compact'><span class='mini'>미제출</span><strong id='unsubmittedValue'>0명</strong></div></div><div class='opButtons' id='opButtons'><button id='startBtn'>게임 시작</button><button id='endBtn' class='danger'>게임 종료</button><button id='ceremonyBtn' class='ceremonyBtn' type='button'>시상식 보기</button><button id='resetBtn' class='ghost'>다음 게임 준비</button><button id='exportQuestionsBtn' class='soft'>문제·결과 엑셀</button><button id='aiReviewBtn' class='soft' type='button'>AI 문제 검토</button><button id='newRoomBtn' class='soft'>새 방 설정</button></div><div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn off'>🔇 음악모드 OFF</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div></div>
   </div>
   <div class='opMain'>
@@ -6261,7 +6311,7 @@ button.soft{
   <div class='settingsCard' role='dialog' aria-modal='true' aria-labelledby='settingsTitle'>
     <button id='settingsClose' class='settingsClose' type='button' aria-label='설정 닫기'>×</button>
     <h2 id='settingsTitle' class='settingsTitle'>⚙ ReMap 설정</h2>
-    <div class='settingsLead'>AI 문제 검토, 학생 PC 접속 자료, 서버 상태를 한곳에서 확인합니다. API 키는 학생 화면으로 전송되지 않습니다.</div>
+    <div class='settingsLead'>AI 문제 검토와 서버 상태를 한곳에서 확인합니다. API 키는 학생 화면으로 전송되지 않습니다.</div>
     <span id='versionBadge' class='versionBadge'>ReMap 상태 확인 중</span>
     <div class='settingsGrid'>
       <section class='settingsSection'>
@@ -6278,10 +6328,10 @@ button.soft{
         <div class='settingsNote'>기본값은 실행 중에만 유지됩니다. 저장을 선택한 Windows PC에서는 현재 Windows 계정에 묶어 암호화해 보관합니다.</div>
       </section>
       <section class='settingsSection'>
-        <h3>학생 접속 자료</h3>
-        <div class='settingsStatus'>모바일·태블릿은 QR, 실습실 PC는 바로가기를 사용하면 됩니다.</div>
-        <div class='settingsButtons'><button id='settingsShortcutBtn' type='button'>PC용 바로가기</button><button id='settingsQrBtn' type='button' class='soft'>QR 이미지 저장</button><button id='openDataFolderBtn' type='button' class='ghost'>저장 폴더 열기</button></div>
+        <h3>학생 접속 주소</h3>
+        <div class='settingsStatus'>학생은 운영 화면의 QR 코드 또는 아래 주소로 접속합니다.</div>
         <div id='settingsStudentUrl' class='settingsNote'>학생 접속 주소 확인 중</div>
+        <div class='settingsButtons'><button id='settingsCopyStudentUrlBtn' type='button' class='soft'>주소 복사</button></div>
       </section>
       <section class='settingsSection full'>
         <h3>🩺 시스템 상태</h3>
@@ -6499,7 +6549,6 @@ function renderDiagnostics(data){
   diagGrid.innerHTML=rows.map(row=>`<div class='diagItem'><span>${escapeHtml(row[0])}</span><strong>${escapeHtml(row[1])}</strong></div>`).join('');
   document.getElementById('diagNote').textContent=data.local_settings_allowed?`저장 위치: ${data.data_dir||'-'}`:'원격 화면에서는 로컬 저장 경로와 네트워크 목록을 숨깁니다.';
   document.getElementById('settingsStudentUrl').textContent=`학생 접속: ${document.getElementById('studentJoinUrl')?.textContent||data.student_base_url||location.origin}`;
-  document.getElementById('openDataFolderBtn').disabled=!data.local_settings_allowed;
 }
 function setModelOptions(models,selected){
   availableAiModels=Array.isArray(models)?models:[];
@@ -6561,12 +6610,9 @@ document.getElementById('saveAiSettingsBtn')?.addEventListener('click',async()=>
 refreshAiModelsBtn?.addEventListener('click',()=>loadAvailableAiModels({silent:false,useTypedKey:true}));
 document.getElementById('testAiBtn')?.addEventListener('click',async()=>{const btn=document.getElementById('testAiBtn');btn.disabled=true;const old=btn.textContent;btn.textContent='연결 중...';setAiStatusBox('Gemini 연결과 사용 모델을 확인하는 중입니다.','warn');try{if(aiSettingsEditable&&(geminiApiKeyInput.value.trim()||geminiModelSelect.value!==currentAiModel)){const key=geminiApiKeyInput.value.trim();const saveRes=await fetch('/api/system/ai_settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({api_key:key||null,model:geminiModelSelect.value.trim(),persist:persistApiKeyInput.checked})});const saveData=await saveRes.json();if(!saveRes.ok||!saveData.ok)throw new Error(saveData.message||'AI 설정 실패');currentAiModel=(saveData.ai||{}).model||geminiModelSelect.value;geminiApiKeyInput.value='';}const res=await fetch('/api/system/ai_test',{method:'POST'});const data=await res.json();if(!res.ok||!data.ok)throw new Error(data.message||'연결 실패');currentAiModel=data.model||currentAiModel;setModelOptions(data.models||availableAiModels,currentAiModel);setAiStatusBox(`● ${data.message} · 현재 사용 모델 ${currentAiModel}`,'ok');}catch(e){setAiStatusBox(e.message||String(e),'warn');}finally{btn.disabled=false;btn.textContent=old;}});
 document.getElementById('clearAiKeyBtn')?.addEventListener('click',async()=>{if(!confirm('현재 입력 및 이 PC에 저장된 Gemini API 키를 삭제할까요?'))return;try{const res=await fetch('/api/system/ai_settings',{method:'DELETE'});const data=await res.json();if(!res.ok||!data.ok)throw new Error(data.message||'삭제 실패');renderAiSettings({editable:true,ai:data.ai});}catch(e){setAiStatusBox(e.message||String(e),'warn');}});
-function downloadCurrentShortcut(){triggerFileDownload(currentShortcutUrl());}
-function downloadCurrentQr(){triggerFileDownload(currentQrDownloadUrl());}
-document.getElementById('downloadShortcutBtn')?.addEventListener('click',downloadCurrentShortcut);document.getElementById('settingsShortcutBtn')?.addEventListener('click',downloadCurrentShortcut);
-document.getElementById('downloadQrBtn')?.addEventListener('click',downloadCurrentQr);document.getElementById('settingsQrBtn')?.addEventListener('click',downloadCurrentQr);
-document.getElementById('copyStudentUrlBtn')?.addEventListener('click',async()=>{const text=document.getElementById('studentJoinUrl')?.textContent||'';try{await navigator.clipboard.writeText(text);alert('학생 접속 주소를 복사했습니다.');}catch(e){prompt('아래 주소를 복사하세요.',text);}});
-document.getElementById('openDataFolderBtn')?.addEventListener('click',async()=>{try{const res=await fetch('/api/system/open_data_folder',{method:'POST'});const data=await res.json();if(!res.ok||!data.ok)throw new Error(data.message||'폴더 열기 실패');}catch(e){alert(e.message||e);}});
+async function copyCurrentStudentUrl(){const text=document.getElementById('studentJoinUrl')?.textContent||'';try{await navigator.clipboard.writeText(text);alert('학생 접속 주소를 복사했습니다.');}catch(e){prompt('아래 주소를 복사하세요.',text);}}
+document.getElementById('copyStudentUrlBtn')?.addEventListener('click',copyCurrentStudentUrl);
+document.getElementById('settingsCopyStudentUrlBtn')?.addEventListener('click',copyCurrentStudentUrl);
 
 function connectTeacherSocket(){
   if(teacherWs){try{teacherWs.close();}catch(e){}}

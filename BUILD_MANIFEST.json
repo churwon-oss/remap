@@ -1,0 +1,23 @@
+{
+  "version": "4.2.1",
+  "entrypoint": "uvicorn app.main:app",
+  "files": {
+    "CHANGELOG_v4.2.1.txt": "0833e4788fdecafd7866764448bf3b4ab4c2a3814aa28289a735ea8cb15c3761",
+    "README_Render_업로드.txt": "243624eca1f535dceb5ece56cf58afa1172d579e090c8297125e921626472280",
+    "VERSION": "e5d77a995a7d89c4b24498cb8947c3b40e53f4d2c0ba2380796cdb059d237848",
+    "app/__init__.py": "611e527a743038052bdf433f86ac979a6bb9cb87a84d4553f9e6ef63de2a0c9c",
+    "app/gemini_transport.py": "21f9b0e8f5b4e492f2a0361855f6ddfd2e3f07eb402276f6eca36cd189c01fee",
+    "app/main.py": "e6597db6b5e7bbb9e7ad915475f48fec9ed58a1dc3451d6c6ac2fdd1b078c506",
+    "app/runtime_config.py": "ceb564ef5e609739256d5f0fc756c2c6b457013cb8f7259855c7a975bf647be7",
+    "app/static/brand_character.jpg": "50dc62d0a151be92b823fd49ff9d58a6916fad0af21607170179e6d89e8e35e3",
+    "app/static/brand_character.png": "94209a80f4a334a79b8f0bd9a99d373451fa2c7590ba7934ae00afe165bc2e84",
+    "app/static/brand_character.svg": "913c28b40a2f48e9c2df70a1d074b77b0ca748d08f4098907251810257fd0455",
+    "app/static/remap.ico": "c474186dde92ca48b083c107ef911c54a54763199dc0fa9ef84ed7b43d3cf680",
+    "app/static/remap_character.svg": "913c28b40a2f48e9c2df70a1d074b77b0ca748d08f4098907251810257fd0455",
+    "app/static/rm_main_sound.mp3": "b9aa3dd652ad44ac7aa2cbab96778ac9cf2bbfae6293588b2606bee655ebf1ca",
+    "app/static/rm_wait_sound.mp3": "1b41c43d6a1220738de95c991955218860e3edfd2b28ed90ccc7b5520492c7ed",
+    "app/static/rm_win_sound.mp3": "dc27c81882affd5756c24d554db9bc556bb704e978949b084ec8e68137d9792f",
+    "render.yaml": "b3a54793cc84dfbe59f36596409078ab739bc28d2303d513710612a8536374d7",
+    "requirements.txt": "22682bfc4557b3d2b7723d1f887ea03f85d1f0c210090adb96afd0e34d97c5c1"
+  }
+}

@@ -16,7 +16,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 APP_NAME = "ReMap"
-APP_VERSION = os.environ.get("REMAP_VERSION", "4.1.9").strip() or "4.1.9"
+APP_VERSION = os.environ.get("REMAP_VERSION", "4.2.1").strip() or "4.2.1"
 DEFAULT_GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "").strip()
 _ALLOWED_RUNTIME_MODES = {"developer", "windows", "render"}
 
