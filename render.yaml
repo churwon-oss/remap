@@ -3,4 +3,9 @@ services:
     name: remap
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --ws-ping-interval 20 --ws-ping-timeout 60 --no-access-log
+    envVars:
+      - key: REMAP_RUNTIME
+        value: render
+      - key: REMAP_VERSION
+        value: 4.1.8

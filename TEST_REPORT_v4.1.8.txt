@@ -1,0 +1,71 @@
+ReMap v4.1.8 테스트 보고서
+=========================
+
+검사 환경
+---------
+- Linux 기반 제작·검사 환경
+- Python 3.13
+- Xvfb 1366x768 가상 디스플레이
+- Windows Portable CPython 3.13 런타임은 v4.1.7 검증 배포본을 기반으로 v4.1.8 소스와 실행기로 재패키징
+
+자동 검사 결과
+--------------
+1. Python 문법 검사
+- app/main.py 통과
+- app/runtime_config.py 통과
+- app/gemini_transport.py 통과
+- launcher/remap_launcher.py 통과
+- tests/test_remap_v4.py 통과
+
+2. Python 회귀 검사
+- pytest: 24개 통과
+- 방 코드별 독립 상태, 중복 닉네임, 재접속, 다음 게임 참가자 유지, 보물상자, AI 설정, 바로가기 생성 로직 포함
+
+3. JavaScript 문법 검사
+- 학생 화면, 교사 화면, 시상식 화면의 내장 스크립트 3개 블록 통과
+
+4. Windows 실행기 화면 검사
+- Xvfb 1366x768에서 실행기 기동 및 렌더링 확인
+- 새 라운드 카드, 상태 요약 카드, QR 미리보기, 그라데이션 버튼, 작성자·문의 정보 표시 확인
+- 대표 캐릭터 앞의 버전 배지가 제거된 것 확인
+- 화면 하단의 버전과 서버 정상 종료 버튼이 잘리지 않고 표시되는 것 확인
+- 미리보기 파일: ReMap_v4.1.8_실행화면_미리보기.png
+
+5. 서버 기동·종료 검사
+- launcher --headless 실행 시 /api/system/status 응답 확인
+- Uvicorn 정상 시작 및 정상 종료 확인
+- GUI 자동 종료 검사에서 서버 shutdown 완료 및 프로세스 종료 확인
+
+6. 학생용 바로가기 검사
+- Windows WScript.Shell용 PowerShell 스크립트 생성 검사 통과
+- target: Windows rundll32 URL protocol handler 확인
+- 현재 내부 IP·포트·방 코드가 URL에 반영되는 것 확인
+- IconLocation이 ReMap_Student.ico를 지정하는 것 확인
+- 기본 파일명이 ReMap 수업 시작.lnk인지 확인
+- 별도 설치 BAT가 생성되지 않는 것 확인
+- 이전 .url 및 설치 BAT 자동 삭제 로직 확인
+- QR PNG, 접속 주소 TXT, HTML 대체 접속 파일 생성 확인
+
+7. 배포본 검사
+- Developer, Render/GitHub, Windows Portable의 app 소스 일치 확인
+- Windows 실행기가 Windows x86-64 PE 실행 파일인지 확인
+- 각 ZIP 무결성 검사 통과
+- SHA-256 목록 생성
+
+환경상 직접 확인하지 못한 항목
+-----------------------------
+- 실제 Windows Explorer가 생성된 .lnk의 ReMap 캐릭터 아이콘을 표시하는 최종 화면
+- 실제 Windows PC에서 .lnk를 더블클릭했을 때 기본 브라우저가 열리는 최종 사용자 동작
+- 학교별 Windows 정책, 아이콘 캐시, PowerShell 또는 WScript COM 제한 여부
+
+위 항목은 Windows에서만 재현할 수 있습니다. 프로그램은 Windows 기본 WScript.Shell COM을 사용해 .lnk를 만들며, 실패하면 오류 메시지를 표시하고 HTML 대체 접속 파일을 제공합니다.
+
+8. 30명 WebSocket 부하 검사
+- 동시 학생 30명
+- 검사 시간 5초
+- 이동 메시지 전송 2,779건
+- 위치 메시지 수신 1,980건
+- 상태 메시지 수신 435건
+- 위치 메시지를 받은 학생 30/30명
+- 오류 0건
+- 위치 지연 중앙값 약 290.79ms, 최대 약 381.0ms
