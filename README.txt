@@ -1,4 +1,4 @@
-ReMap v4.1.8
+ReMap v4.1.9
 =============
 
 ReMap(Remind Map)은 학생이 배운 내용을 직접 문제로 만들고, 게임 맵에서 친구를 만나
@@ -6,16 +6,16 @@ ReMap(Remind Map)은 학생이 배운 내용을 직접 문제로 만들고, 게�
 
 이 배포본은 사용 목적에 따라 세 가지로 나뉩니다.
 
-1. ReMap_v4.1.8_Windows_Portable_EXE.zip
+1. ReMap_v4.1.9_Windows_Portable_EXE.zip
    - 일반 교사용
    - Python 설치 불필요
    - ZIP 전체를 압축 해제한 뒤 ReMap_Server.exe 실행
 
-2. ReMap_v4.1.8_Developer_Python.zip
+2. ReMap_v4.1.9_Developer_Python.zip
    - 설계자·개발자용 전체 소스
    - Python으로 실행, 수정, 검사 가능
 
-3. ReMap_v4.1.8_Render_GitHub.zip
+3. ReMap_v4.1.9_Render_GitHub.zip
    - GitHub / Render 배포용
    - ZIP 내부 파일을 GitHub 저장소 최상위에 업로드
 
@@ -100,7 +100,7 @@ A. Windows 일반 교사용
 ----------------------
 
 사용 파일:
-  ReMap_v4.1.8_Windows_Portable_EXE.zip
+  ReMap_v4.1.9_Windows_Portable_EXE.zip
 
 실행:
 1. ZIP을 다운로드합니다.
@@ -122,7 +122,7 @@ A. Windows 일반 교사용
 - 학교 보안 설정이 바로가기 실행을 제한하면 함께 생성된 "바로가기 오류 시 여기를 눌러 수업에 참여하세요.html" 실행
 
 중요:
-- 이전 버전에서 만든 .url 및 설치용 BAT는 삭제하고 v4.1.8에서 새로 만드세요.
+- 이전 버전에서 만든 .url 및 설치용 BAT는 삭제하고 v4.1.9에서 새로 만드세요.
 - 새 바로가기는 현재 실행 PC에서 선택한 IP와 실제 포트를 자동 반영합니다.
 - ReMap 수업 시작.lnk와 ReMap_Student.ico는 같은 학생 접속 폴더에 함께 보관하세요.
 
@@ -183,7 +183,7 @@ C. GitHub / Render 배포
 ----------------------
 
 사용 파일:
-  ReMap_v4.1.8_Render_GitHub.zip
+  ReMap_v4.1.9_Render_GitHub.zip
 
 1. ZIP 내부 파일을 GitHub 저장소 최상위에 올립니다.
 2. Render에서 저장소를 연결합니다.
@@ -197,7 +197,7 @@ Start Command:
 
 환경변수:
   REMAP_RUNTIME=render
-  REMAP_VERSION=4.1.8
+  REMAP_VERSION=4.1.9
   GEMINI_API_KEY=발급받은 키       (AI 검토 사용 시)
   GEMINI_MODEL=사용할 모델 ID     (선택, 미지정 시 API 키에서 자동 선택)
 
