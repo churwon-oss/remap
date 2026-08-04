@@ -9,3 +9,5 @@ services:
         value: render
       - key: REMAP_PUBLIC_BASE_URL
         value: https://remap-oxrv.onrender.com
+      - key: REMAP_FORCE_PUBLIC_ORIGIN
+        value: '1'

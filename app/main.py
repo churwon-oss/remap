@@ -83,52 +83,20 @@ def get_lan_ip() -> str:
     return '127.0.0.1'
 
 
+REMAP_RENDER_ORIGIN = 'https://remap-oxrv.onrender.com'
+
 def get_network_base_url(request: Request) -> str:
-    """Return the public student-facing origin for the current runtime.
+    """Return the fixed public origin for the dedicated Render build.
 
-    Local Windows/developer builds advertise the teacher PC's LAN IP. Public
-    deployments use the browser-visible host from reverse-proxy headers. This
-    auto-detection is intentional because an existing Render service may not
-    re-import render.yaml environment variables on every source deployment.
+    This upload package is intentionally separate from the local Windows build.
+    QR codes, copied student links, and teacher links must never expose Render's
+    internal 10.x/172.x service address. An explicitly configured public origin
+    may override the default, but the fallback is always the published Render URL.
     """
-    forwarded_proto = (request.headers.get('x-forwarded-proto') or '').split(',')[0].strip()
-    scheme = forwarded_proto or request.url.scheme or 'http'
     configured_origin = os.environ.get('REMAP_PUBLIC_BASE_URL', '').strip().rstrip('/')
-    forwarded_host = (request.headers.get('x-forwarded-host') or '').split(',')[0].strip()
-    host_header = (request.headers.get('host') or '').split(',')[0].strip()
-    public_netloc = forwarded_host or host_header or request.url.netloc
-    public_hostname = public_netloc.split(':', 1)[0].strip().lower()
-
-    if configured_origin and runtime_settings.mode == 'render':
+    if configured_origin.startswith('https://') and '.onrender.com' in configured_origin:
         return configured_origin
-
-    is_render_host = public_hostname.endswith('.onrender.com')
-    is_public_https_host = (
-        scheme == 'https'
-        and public_hostname
-        and public_hostname not in {'localhost', '127.0.0.1', '0.0.0.0', '::1'}
-        and not public_hostname.startswith('10.')
-        and not public_hostname.startswith('192.168.')
-        and not public_hostname.startswith('172.16.')
-    )
-    if public_netloc and (runtime_settings.mode == 'render' or is_render_host or is_public_https_host):
-        return f'{scheme}://{public_netloc}'.rstrip('/')
-
-    host = request.url.hostname or get_lan_ip()
-    port = request.url.port
-    if runtime_settings.mode in {'developer', 'windows'}:
-        configured_host = runtime_settings.public_host()
-        if configured_host:
-            host = configured_host
-        if runtime_settings.port_is_explicit():
-            configured_port = runtime_settings.port()
-            if configured_port:
-                port = configured_port
-    if host in {'localhost', '127.0.0.1', '0.0.0.0', '::1'}:
-        host = get_lan_ip()
-    default_port = 443 if scheme == 'https' else 80
-    netloc = host if not port or port == default_port else f'{host}:{port}'
-    return f'{scheme}://{netloc}'
+    return REMAP_RENDER_ORIGIN
 
 
 def normalize_room_code(value: str | None) -> str:
