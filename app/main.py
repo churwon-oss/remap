@@ -4862,11 +4862,27 @@ button.soft{
 .studySubtitle{margin-top:3px;color:#173b7a;font-size:12px;font-weight:900;word-break:keep-all}
 .studyScope{margin-top:4px;color:#35516f;font-size:11px;font-weight:900;word-break:keep-all}
 
+/* ReMap five-color mascot lineup: shared brand decoration for student/teacher setup screens. */
+#joinScreen{flex-direction:column;gap:12px}
+.joinMascotLineup{display:block;width:min(700px,78vw);height:auto;max-height:122px;object-fit:contain;pointer-events:none;user-select:none;filter:drop-shadow(0 10px 18px rgba(4,14,28,.18))}
+.teacherFooterRow{display:grid;grid-template-columns:minmax(0,1fr) minmax(350px,1fr);gap:18px;align-items:end;margin-top:10px}
+.teacherMascotLineup{display:block;width:min(430px,100%);height:auto;max-height:88px;object-fit:contain;object-position:left center;align-self:end;pointer-events:none;user-select:none;filter:drop-shadow(0 8px 14px rgba(15,31,58,.12))}
+.teacherFooterMeta{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:0}
+#createScreen .teacherFooterMeta .teacherMusicPanel{margin-top:0}
+@media(max-width:760px){
+  #joinScreen{gap:8px!important}
+  .joinMascotLineup{width:min(560px,88vw);max-height:82px}
+  .teacherFooterRow{grid-template-columns:1fr;gap:8px}
+  .teacherMascotLineup{width:min(400px,88%);max-height:76px;justify-self:center;object-position:center}
+  .teacherFooterMeta{align-items:stretch}
+}
+
 </style>
 </head>
 <body>
 <div class='topbar'><div class='brand'>ReMap</div><div id='roomTitleBar' class='roomTitle'>REMAP</div><div id='statusBar' class='statusBadge'>[현재상황: 준비 중]</div><button id='topLeaveBtn' class='topLeaveBtn' type='button'>나가기</button></div>
 <div id='joinScreen'>
+  <img class='joinMascotLineup' src='/static/mascot_lineup.png' alt='ReMap 캐릭터 5종'>
   <div class='card' style='max-width:560px'>
     <h1 style='margin-top:0;color:#173b7a'>방 입장</h1>
     <div class='mini'>방 코드와 닉네임을 먼저 입력하세요. 닉네임은 방장에게 즉시 표시됩니다.</div>
@@ -6208,6 +6224,13 @@ button.soft{
 }
 
 
+/* Five-color mascot lineup in the teacher setup footer. */
+.teacherFooterRow{display:grid;grid-template-columns:minmax(0,1fr) minmax(350px,1fr);gap:18px;align-items:end;margin-top:10px}
+.teacherMascotLineup{display:block;width:330px;max-width:100%;height:auto;max-height:64px;object-fit:contain;object-position:left center;align-self:end;justify-self:start;pointer-events:none;user-select:none;filter:drop-shadow(0 7px 12px rgba(15,31,58,.12))}
+.teacherFooterMeta{display:flex;flex-direction:column;gap:6px;align-items:stretch;min-width:0}
+#createScreen .teacherFooterMeta .teacherMusicPanel{margin-top:0}
+@media(max-width:760px){.teacherFooterRow{grid-template-columns:1fr;gap:8px}.teacherMascotLineup{width:min(330px,88%);max-height:64px;justify-self:center;object-position:center}.teacherFooterMeta{align-items:stretch}}
+
 /* ===== Local settings, diagnostics, and PC shortcut tools ===== */
 .topActions{display:flex;align-items:center;gap:8px;z-index:8}.settingsTopBtn{width:auto;height:38px;min-height:38px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.10)!important;border:1px solid rgba(148,197,255,.30)!important;box-shadow:none!important;font-size:13px!important;font-weight:900!important;white-space:nowrap}.accessActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.accessActions button{width:auto;min-height:34px;padding:7px 10px;font-size:12px;box-shadow:none}.settingsModal{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(2,8,23,.74);backdrop-filter:blur(10px)}.settingsModal.show{display:flex}.settingsCard{width:min(900px,96vw);max-height:92vh;overflow:auto;border-radius:26px;padding:22px;background:linear-gradient(155deg,#f8fbff,#e6f1ff);border:1px solid rgba(148,197,255,.65);box-shadow:0 34px 100px rgba(0,0,0,.42);color:#10233f;position:relative}.settingsClose{position:absolute;right:14px;top:14px;width:40px;height:40px;padding:0;border-radius:999px;background:#10233f!important;color:#fff!important;font-size:25px;box-shadow:none!important}.settingsTitle{margin:0 48px 6px 0;color:#0f2d59;font-size:27px}.settingsLead{color:#526a8a;font-size:13px;line-height:1.5}.settingsGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.settingsSection{border-radius:18px;padding:14px;background:linear-gradient(180deg,#ffffff,#edf5ff);border:1px solid rgba(91,141,204,.28);box-shadow:0 10px 26px rgba(15,31,58,.08)}.settingsSection.full{grid-column:1/-1}.settingsSection h3{margin:0 0 10px;color:#12315a}.settingsSection label{display:block;margin:8px 0 5px;color:#4d6688;font-size:12px;font-weight:900}.settingsSection input,.settingsSection select{background:#fff!important;color:#10233f!important}.modelSelectWrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.modelSelectWrap select{width:100%;min-height:44px;border-radius:12px;padding:8px 10px;border:1px solid rgba(91,141,204,.35);font-weight:800}.modelSelectWrap button{min-width:112px;box-shadow:none}.settingsButtons{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}.settingsButtons button{width:auto;min-height:38px;padding:8px 11px;font-size:13px}.settingsStatus{padding:10px 12px;border-radius:13px;background:#e8f2ff;border:1px solid rgba(91,141,204,.22);color:#173b7a;font-size:13px;font-weight:900;line-height:1.45}.settingsStatus.ok{background:#dcfce7;border-color:#86efac;color:#166534}.settingsStatus.warn{background:#fef3c7;border-color:#fde68a;color:#854d0e}.persistRow{display:flex!important;align-items:center;gap:8px;margin-top:10px!important}.persistRow input{width:18px!important;height:18px!important;margin:0!important;accent-color:#2563eb}.diagGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.diagItem{padding:10px;border-radius:13px;background:#f4f8ff;border:1px solid rgba(91,141,204,.20);min-width:0}.diagItem span{display:block;color:#617795;font-size:11px;font-weight:900}.diagItem strong{display:block;margin-top:4px;color:#10233f;font-size:14px;word-break:break-word}.settingsNote{margin-top:8px;color:#617795;font-size:12px;line-height:1.5}.versionBadge{display:inline-flex;margin-top:6px;padding:5px 8px;border-radius:999px;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:1000}.apiKeyWrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.apiKeyWrap button{min-width:62px;box-shadow:none}.inlineCheck{display:flex;align-items:center;gap:8px}.inlineCheck input{width:18px!important;height:18px!important}.localOnlyHint{display:none;margin-top:8px;padding:8px;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12px;font-weight:800}.localOnlyHint.show{display:block}
 @media(max-width:760px){.topActions{gap:4px}.settingsTopBtn{height:32px;min-height:32px;padding:0 8px;font-size:11px!important}.settingsGrid{grid-template-columns:1fr}.settingsSection.full{grid-column:auto}.diagGrid{grid-template-columns:1fr 1fr}.settingsCard{padding:18px 14px}.accessActions{justify-content:center}.settingsButtons button{flex:1}.topbar .statusBadge{max-width:118px!important}}
@@ -6244,7 +6267,14 @@ button.soft{
         <div class='field'><label>배경 이미지</label><input id='bgFile' type='file' accept='image/*'></div>
       </div>
     </div>
-    <div class='createActions'><button id='createBtn'>방 생성</button><button id='clearBgPreBtn' type='button' class='ghost'>기본 배경 복원</button></div><div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn off'>🔇 음악모드 OFF</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div><div class='teacherCredit'><div class='creditHeadline'>문제를 만드는 학생, 배움의 주체가 되다</div><div class='creditSubtitle'>- 학생 주도형 복습 소프트웨어 ReMap의 개발 및 적용 -</div><div class='creditScope'>적용 대상: 초·중·고 전 학년 · 활용 교과: 전 교과</div></div>
+    <div class='createActions'><button id='createBtn'>방 생성</button><button id='clearBgPreBtn' type='button' class='ghost'>기본 배경 복원</button></div>
+    <div class='teacherFooterRow'>
+      <img class='teacherMascotLineup' src='/static/mascot_lineup.png' alt='ReMap 캐릭터 5종'>
+      <div class='teacherFooterMeta'>
+        <div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn off'>🔇 음악모드 OFF</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div>
+        <div class='teacherCredit'><div class='creditHeadline'>문제를 만드는 학생, 배움의 주체가 되다</div><div class='creditSubtitle'>- 학생 주도형 복습 소프트웨어 ReMap의 개발 및 적용 -</div><div class='creditScope'>적용 대상: 초·중·고 전 학년 · 활용 교과: 전 교과</div></div>
+      </div>
+    </div>
   </div>
 </section>
 <section id='operateScreen'>
