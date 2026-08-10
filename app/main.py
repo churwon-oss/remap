@@ -4886,7 +4886,7 @@ button.soft{
   <div class='card' style='max-width:560px'>
     <h1 style='margin-top:0;color:#173b7a'>방 입장</h1>
     <div class='mini'>방 코드와 닉네임을 먼저 입력하세요. 닉네임은 방장에게 즉시 표시됩니다.</div>
-    <div class='studyMeta'><div class='studyHeadline'>문제를 만드는 학생, 배움의 주체가 되다</div><div class='studySubtitle'>- 학생 주도형 복습 소프트웨어 ReMap의 개발 및 적용 -</div><div class='studyScope'>적용 대상: 초·중·고 전 학년 · 활용 교과: 전 교과</div></div>
+    <div class='studyMeta'><div class='studyHeadline'>문제를 만드는 학생, 배움의 주체가 되다</div><div class='studySubtitle'>- 학생 주도형 복습 소프트웨어 ReMap의 개발 및 적용 -</div><div class='studyScope'>연구 적용 대상: 고등학교 1·2학년<br>활용 가능 대상: 초·중·고 전 학년 · 활용 교과: 전 교과</div></div>
     <div class='stack' style='margin-top:16px'>
       <input id='roomCode' placeholder='방 코드' maxlength='4' style='text-transform:uppercase' />
       <input id='nickname' placeholder='닉네임' maxlength='12' />
@@ -6272,7 +6272,7 @@ button.soft{
       <img class='teacherMascotLineup' src='/static/mascot_lineup.png' alt='ReMap 캐릭터 5종'>
       <div class='teacherFooterMeta'>
         <div class='teacherMusicPanel' aria-label='교사용 음악 모드'><button type='button' class='musicToggleBtn off'>🔇 음악모드 OFF</button><label class='musicVolumeLabel'>음량 <input type='range' class='musicVolume' min='0' max='100' value='35'></label><span class='musicHint'>교사 화면에서만 재생</span></div>
-        <div class='teacherCredit'><div class='creditHeadline'>문제를 만드는 학생, 배움의 주체가 되다</div><div class='creditSubtitle'>- 학생 주도형 복습 소프트웨어 ReMap의 개발 및 적용 -</div><div class='creditScope'>적용 대상: 초·중·고 전 학년 · 활용 교과: 전 교과</div></div>
+        <div class='teacherCredit'><div class='creditHeadline'>문제를 만드는 학생, 배움의 주체가 되다</div><div class='creditSubtitle'>- 학생 주도형 복습 소프트웨어 ReMap의 개발 및 적용 -</div><div class='creditScope'>연구 적용 대상: 고등학교 1·2학년<br>활용 가능 대상: 초·중·고 전 학년 · 활용 교과: 전 교과</div></div>
       </div>
     </div>
   </div>
